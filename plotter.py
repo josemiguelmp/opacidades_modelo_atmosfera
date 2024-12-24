@@ -1,3 +1,5 @@
+#%%
+
 import numpy as np
 import pandas as pd
 import matplotlib.pylab as plt
@@ -63,17 +65,19 @@ Pg_2           = np.array(df_model_structure_2['Pg'],     dtype=float)          
 Prad_2         = np.array(df_model_structure_2['Prad'],   dtype=float)            # Presión de radiación
 
 
+# %%
+# Primeros plots: 
 
-# Primeros plots 
-
+# log tau vs depth
 plt.figure(figsize=(10, 8))
 plt.plot(r_1, logtauR_1, 'b-', label='$T_{eff}$ = 5000 K')
 plt.plot(r_2, logtauR_2, 'r-', label='$T_{eff}$ = 8000 K')
-plt.xlabel('Geometrical depth')
+plt.xlabel('Geometrical depth [cm]')
 plt.ylabel('log $\\tau_{Ross}$')
 plt.legend()
 plt.savefig('Figures/r_logtauR.pdf')
 
+# Temperature vs log(tau)
 plt.figure(figsize=(10, 8))
 plt.plot(logtauR_1, T_1, 'b-', label='$T_{eff}$ = 5000 K')
 plt.plot(logtauR_2, T_2, 'r-', label='$T_{eff}$ = 8000 K')
@@ -83,29 +87,35 @@ plt.gca().invert_xaxis()
 plt.legend()
 plt.savefig('Figures/logtauR_T.pdf')
 
+# Pe vs log(tau)
 plt.figure(figsize=(10, 8))
 plt.plot(logtauR_1, Pe_1, 'b-', label='$T_{eff}$ = 5000 K')
 plt.plot(logtauR_2, Pe_2, 'r-', label='$T_{eff}$ = 8000 K')
 plt.xlabel('log $\\tau_{Ross}$')
 plt.ylabel('Electronic pressure [dyn/cm$^2$]')
+plt.yscale('log')
 plt.gca().invert_xaxis()
 plt.legend()
 plt.savefig('Figures/logtauR_Pe.pdf')
 
+# Pe/Pg vs log(tau)
 plt.figure(figsize=(10, 8))
 plt.plot(logtauR_1, Pe_1/Pg_1, 'b-', label='$T_{eff}$ = 5000 K')
 plt.plot(logtauR_2, Pe_2/Pg_2, 'r-', label='$T_{eff}$ = 8000 K')
 plt.xlabel('log $\\tau_{Ross}$')
 plt.ylabel('$P_e/P_g$')
+plt.yscale('log')
 plt.gca().invert_xaxis()
 plt.legend()
 plt.savefig('Figures/logtauR_Pe_Pg.pdf')
 
+# Prad/Pg vs log(tau)
 plt.figure(figsize=(10, 8))
 plt.plot(logtauR_1, Prad_1/Pg_1, 'b-', label='$T_{eff}$ = 5000 K')
 plt.plot(logtauR_2, Prad_2/Pg_2, 'r-', label='$T_{eff}$ = 8000 K')
 plt.xlabel('log $\\tau_{Ross}$')
 plt.ylabel('$P_{rad}/P_g$')
+plt.yscale('log')
 plt.gca().invert_xaxis()
 plt.legend()
 plt.savefig('Figures/logtauR_Prad_Pg.pdf')
