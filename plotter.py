@@ -121,3 +121,17 @@ plt.yscale('log')
 plt.gca().invert_xaxis()
 plt.legend()
 plt.savefig('Figures/logtauR_Prad_Pg.pdf')
+
+
+# %%
+
+T_gris_1 = ( (3/4) * Teff_1**4 * (10**(logtauR_1) + 2/3) )**(1/4)
+T_gris_2 = ( (3/4) * Teff_2**4 * (10**(logtauR_2) + 2/3) )**(1/4)
+
+plt.figure(figsize=(10, 8))
+plt.plot(T_gris_1, T_1, 'b-', label='$T_{eff}$ = 5000 K')
+plt.plot(T_gris_2, T_2, 'r-', label='$T_{eff}$ = 8000 K')
+plt.xlabel('Temperature gray body [K]')
+plt.ylabel('Temperature [K]')
+plt.legend()
+plt.show()
