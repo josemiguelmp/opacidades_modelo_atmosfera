@@ -10,6 +10,8 @@ import os
 
 file_name_1 = "t5000.dat"
 Teff_1 = 5000
+log_g_1 = log_g_2 = 4.5
+
 
 with open(file_name_1, 'r') as file:
     lines_1 = file.readlines()
