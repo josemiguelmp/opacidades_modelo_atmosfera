@@ -159,9 +159,6 @@ g_HI = 2
 g_HII = 1
 g_Hneg = 1
 
-#Ne_1 = Pe_1/(k_B*T_1)     # cm^-3
-#Ne_2 = Pe_2/(k_B*T_2)     # cm^-3
-
 
 # =============================================================================
 # Funciones para obtener poblaciones en de H-, HI, HII
