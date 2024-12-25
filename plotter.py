@@ -1,5 +1,6 @@
 #%%
 
+from scipy.optimize import fsolve
 import numpy as np
 import pandas as pd
 import matplotlib.pylab as plt
@@ -84,7 +85,7 @@ plt.figure(figsize=(10, 8))
 plt.plot(logtauR_1, T_1, 'b-', label='$T_{eff}$ = 5000 K')
 plt.plot(logtauR_2, T_2, 'r-', label='$T_{eff}$ = 8000 K')
 plt.xlabel('log $\\tau_{Ross}$')
-plt.ylabel('Temperature [K]')
+plt.ylabel('T [K]')
 plt.legend()
 plt.savefig('Figures/logtauR_T.pdf')
 
@@ -93,7 +94,7 @@ plt.figure(figsize=(10, 8))
 plt.plot(logtauR_1, Pe_1, 'b-', label='$T_{eff}$ = 5000 K')
 plt.plot(logtauR_2, Pe_2, 'r-', label='$T_{eff}$ = 8000 K')
 plt.xlabel('log $\\tau_{Ross}$')
-plt.ylabel('Electronic pressure [dyn/cm$^2$]')
+plt.ylabel('$P_e$ [dyn/cm$^2$]')
 plt.yscale('log')
 plt.legend()
 plt.savefig('Figures/logtauR_Pe.pdf')
@@ -128,7 +129,7 @@ plt.figure(figsize=(10, 8))
 plt.plot(logtauR_1, T_gris_1, 'g-', label='T gray body')
 plt.plot(logtauR_1, T_1, 'b-', label='T modelo MARCS')
 plt.xlabel('log $\\tau_{Ross}$')
-plt.ylabel('Temperature [K]')
+plt.ylabel('T [K]')
 plt.title('Star with $T_{eff}$ = 5000 K')
 plt.legend()
 plt.savefig('Figures/Temperature_gray_body_1.pdf')
@@ -137,8 +138,133 @@ plt.figure(figsize=(10, 8))
 plt.plot(logtauR_2, T_gris_2, 'g-', label='T gray body')
 plt.plot(logtauR_2, T_2, 'b-', label='T modelo MARCS')
 plt.xlabel('log $\\tau_{Ross}$')
-plt.ylabel('Temperature [K]')
+plt.ylabel('T [K]')
 plt.title('Star with $T_{eff}$ = 8000 K')
 plt.legend()
 plt.savefig('Figures/Temperature_gray_body_2.pdf')
+
+# %%
+
+# Constantes en cgs
+k_B = 1.380622e-16
+eV_to_erg = 1.602176634e-12
+
+# Constantes en eV
+kB_eV = 8.617e-5
+chi_HI = 13.6
+chi_Hneg = 0.75
+
+# Funciones de partición 
+g_HI = 2
+g_HII = 1
+g_Hneg = 1
+
+#Ne_1 = Pe_1/(k_B*T_1)     # cm^-3
+#Ne_2 = Pe_2/(k_B*T_2)     # cm^-3
+
+def Ne_ideal_gases(Pe, T):
+    return Pe / ( k_B * T )
+
+def Saha_1(Ne, T):        # n(HI)/n(HII)
+    return 2.07e-16 * Ne * (g_HI/g_HII) * T**(-3/2) * np.exp( chi_HI / (kB_eV * T) )
+    
+def Saha_2(Ne, T):        # n(Hneg)/n(HI)
+    return 2.07e-16 * Ne * (g_Hneg/g_HI) * T**(-3/2) * np.exp( chi_Hneg / (kB_eV * T) )
+
+def charge_conservation(saha_factor_1, saha_factor_2, Ne, n_HII):
+    
+    n_HI   = saha_factor_1 * n_HII
+    n_Hneg = saha_factor_2 * n_HI
+    
+    return Ne + n_Hneg - n_HII
+
+
+
+
+def populations_finder(Pe, T):
+    
+    Ne = Ne_ideal_gases(Pe, T)
+    saha_factor_1 = Saha_1(Ne, T)
+    saha_factor_2 = Saha_2(Ne, T)
+    #print(Ne, saha_factor_1, saha_factor_2)
+    
+    func = lambda n: charge_conservation(saha_factor_1, saha_factor_2, Ne, n)
+    initial_guess = Ne * 0.01
+    solution = np.clip(fsolve(func, initial_guess), 0, None)
+
+    n_HII = solution[0]
+    
+    n_HI   = saha_factor_1 * n_HII
+    n_Hneg = saha_factor_2 * n_HI
+    n_vector = np.array([n_Hneg, n_HI, n_HII])
+    
+    return n_vector
+
+
+
+
+# Estrella con Teff = 5000 K
+
+tauR_1 = 10**logtauR_1
+
+for ii in range(len(tauR_1)):
+    if abs(tauR_1[ii]-0.5)<0.1:
+        tau_0_5_index = ii
+    elif abs(tauR_1[ii]-5)<0.1:
+        tau_5_index = ii
+        
+T_1_tau_0_5 = T_1[tau_0_5_index]
+Pe_1_tau_0_5 = Pe_1[tau_0_5_index]
+Ne = Ne_ideal_gases(Pe_1_tau_0_5, T_1_tau_0_5)
+n_vector = populations_finder(Pe_1_tau_0_5, T_1_tau_0_5)
+
+df_model_1 = pd.DataFrame(columns=['tauR', 'n(H-)', 'n(HI)', 'n(HII)', 'Ne'])
+new_row = [0.5, n_vector[0], n_vector[1], n_vector[2], Ne]
+df_model_1.loc[len(df_model_1)] = new_row
+
+T_1_tau_5 = T_1[tau_5_index]
+Pe_1_tau_5 = Pe_1[tau_5_index]
+Ne = Ne_ideal_gases(Pe_1_tau_5, T_1_tau_5)
+n_vector = populations_finder(Pe_1_tau_5, T_1_tau_5)
+
+new_row = [5, n_vector[0], n_vector[1], n_vector[2], Ne]
+df_model_1.loc[len(df_model_1)] = new_row
+
+print('1) Estrella con Teff = 5000 K')
+print(df_model_1)
+
+
+
+# Estrella con Teff = 8000 K
+
+tauR_2 = 10**logtauR_2
+
+for ii in range(len(tauR_2)):
+    if abs(tauR_2[ii]-0.5)<0.1:
+        tau_0_5_index = ii
+    elif abs(tauR_2[ii]-5)<0.1:
+        tau_5_index = ii
+        
+T_2_tau_0_5 = T_2[tau_0_5_index]
+Pe_2_tau_0_5 = Pe_2[tau_0_5_index]
+Ne = Ne_ideal_gases(Pe_2_tau_0_5, T_2_tau_0_5)
+n_vector = populations_finder(Pe_2_tau_0_5, T_2_tau_0_5)
+
+df_model_2 = pd.DataFrame(columns=['tauR', 'n(H-)', 'n(HI)', 'n(HII)', 'Ne'])
+new_row = [0.5, n_vector[0], n_vector[1], n_vector[2], Ne]
+df_model_2.loc[len(df_model_2)] = new_row
+
+T_2_tau_5 = T_1[tau_5_index]
+Pe_2_tau_5 = Pe_1[tau_5_index]
+Ne = Ne_ideal_gases(Pe_2_tau_5, T_2_tau_5)
+n_vector = populations_finder(Pe_2_tau_5, T_2_tau_5)
+
+new_row = [5, n_vector[0], n_vector[1], n_vector[2], Ne]
+df_model_2.loc[len(df_model_2)] = new_row
+
+print('\n2)Estrella con Teff = 8000 K')
+print(df_model_2)
+
+
+
 
