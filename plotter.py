@@ -162,6 +162,11 @@ g_Hneg = 1
 #Ne_1 = Pe_1/(k_B*T_1)     # cm^-3
 #Ne_2 = Pe_2/(k_B*T_2)     # cm^-3
 
+
+# =============================================================================
+# Funciones para obtener poblaciones en de H-, HI, HII
+# =============================================================================
+
 def Ne_ideal_gases(Pe, T):
     return Pe / ( k_B * T )
 
@@ -177,7 +182,6 @@ def charge_conservation(saha_factor_1, saha_factor_2, Ne, n_HII):
     n_Hneg = saha_factor_2 * n_HI
     
     return Ne + n_Hneg - n_HII
-
 
 
 
@@ -201,7 +205,52 @@ def populations_finder(Pe, T):
     return n_vector
 
 
+# =============================================================================
+# Funciones para obtener poblaciones en los niveles n=1,2,3 de HI
+# =============================================================================
 
+def g(n):
+    return 2 * n**2
+
+def E_n(n):
+    return -13.6 / (n**2)     # eV
+
+def Boltzmann(T):
+    g1, g2, g3 = g(1), g(2), g(3)
+    E1, E2, E3 = E_n(1), E_n(2), E_n(3)
+    
+    n2_n1 = (g2/g1) * np.exp(-(E2-E1)/(kB_eV*T))
+    n3_n1 = (g3/g1) * np.exp(-(E3-E1)/(kB_eV*T))
+    
+    return n2_n1, n3_n1
+
+
+def n_Boltzmann(n2_n1, n3_n1, n1):
+    n2 = n2_n1 * n1
+    n3 = n3_n1 * n1
+    
+    return n_HI - (n1 + n2 + n3)
+
+
+def n_levels_finder(n_HI, T):
+    
+    n2_n1, n3_n1 = Boltzmann(T)
+    
+    func = lambda n: n_Boltzmann(n2_n1, n3_n1, n)
+    initial_guess = n_HI * 0.6
+    solution = np.clip(fsolve(func, initial_guess), 0, None)
+
+    n1 = solution[0]
+    n2 = n2_n1 * n1
+    n3 = n3_n1 * n1
+    n_vector = np.array([n1, n2, n3])
+    
+    return n_vector
+
+
+# =============================================================================
+# Cálculos para obtener las tablas
+# =============================================================================
 
 # Estrella con Teff = 5000 K
 
@@ -217,17 +266,21 @@ T_1_tau_0_5 = T_1[tau_0_5_index]
 Pe_1_tau_0_5 = Pe_1[tau_0_5_index]
 Ne = Ne_ideal_gases(Pe_1_tau_0_5, T_1_tau_0_5)
 n_vector = populations_finder(Pe_1_tau_0_5, T_1_tau_0_5)
+n_HI = n_vector[1]
+n_levels = n_levels_finder(n_HI, T_1_tau_0_5)
 
-df_model_1 = pd.DataFrame(columns=['tauR', 'n(H-)', 'n(HI)', 'n(HII)', 'Ne'])
-new_row = [0.5, n_vector[0], n_vector[1], n_vector[2], Ne]
+df_model_1 = pd.DataFrame(columns=['tauR', 'n(H-)', 'n(HI)', 'n(HII)', 'Ne', 'n(HI, n=1)', 'n(HI, n=2)', 'n(HI, n=3)'])
+new_row = [0.5, n_vector[0], n_vector[1], n_vector[2], Ne, n_levels[0], n_levels[1], n_levels[2]]
 df_model_1.loc[len(df_model_1)] = new_row
 
 T_1_tau_5 = T_1[tau_5_index]
 Pe_1_tau_5 = Pe_1[tau_5_index]
 Ne = Ne_ideal_gases(Pe_1_tau_5, T_1_tau_5)
 n_vector = populations_finder(Pe_1_tau_5, T_1_tau_5)
+n_HI = n_vector[1]
+n_levels = n_levels_finder(n_HI, T_1_tau_5)
 
-new_row = [5, n_vector[0], n_vector[1], n_vector[2], Ne]
+new_row = [5, n_vector[0], n_vector[1], n_vector[2], Ne, n_levels[0], n_levels[1], n_levels[2]]
 df_model_1.loc[len(df_model_1)] = new_row
 
 print('1) Estrella con Teff = 5000 K')
@@ -249,22 +302,22 @@ T_2_tau_0_5 = T_2[tau_0_5_index]
 Pe_2_tau_0_5 = Pe_2[tau_0_5_index]
 Ne = Ne_ideal_gases(Pe_2_tau_0_5, T_2_tau_0_5)
 n_vector = populations_finder(Pe_2_tau_0_5, T_2_tau_0_5)
+n_HI = n_vector[1]
+n_levels = n_levels_finder(n_HI, T_2_tau_0_5)
 
-df_model_2 = pd.DataFrame(columns=['tauR', 'n(H-)', 'n(HI)', 'n(HII)', 'Ne'])
-new_row = [0.5, n_vector[0], n_vector[1], n_vector[2], Ne]
+df_model_2 = pd.DataFrame(columns=['tauR', 'n(H-)', 'n(HI)', 'n(HII)', 'Ne', 'n(HI, n=1)', 'n(HI, n=2)', 'n(HI, n=3)'])
+new_row = [0.5, n_vector[0], n_vector[1], n_vector[2], Ne, n_levels[0], n_levels[1], n_levels[2]]
 df_model_2.loc[len(df_model_2)] = new_row
 
 T_2_tau_5 = T_1[tau_5_index]
 Pe_2_tau_5 = Pe_1[tau_5_index]
 Ne = Ne_ideal_gases(Pe_2_tau_5, T_2_tau_5)
 n_vector = populations_finder(Pe_2_tau_5, T_2_tau_5)
+n_HI = n_vector[1]
+n_levels = n_levels_finder(n_HI, T_2_tau_5)
 
-new_row = [5, n_vector[0], n_vector[1], n_vector[2], Ne]
+new_row = [5, n_vector[0], n_vector[1], n_vector[2], Ne, n_levels[0], n_levels[1], n_levels[2]]
 df_model_2.loc[len(df_model_2)] = new_row
 
-print('\n2)Estrella con Teff = 8000 K')
+print('\n2) Estrella con Teff = 8000 K')
 print(df_model_2)
-
-
-
-
