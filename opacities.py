@@ -671,3 +671,19 @@ plt.xlabel('$\lambda$ [$\mathrm{\AA}$]')
 plt.legend()
 plt.grid()
 plt.savefig('Figures/kappa_2.pdf')
+
+
+
+plt.figure(figsize=(10, 8))
+
+plt.plot(lambda_array_A, kappa_total_1, label='$\kappa_{total}, T_{eff}$ = 5000 K')
+plt.plot(lambda_array_A, kappa_total_2, label='$\kappa_{total}, T_{eff}$ = 8000 K')
+
+
+plt.yscale('log')
+plt.xscale('log')
+plt.ylabel('$\kappa$ [cm$^{-1}$]')
+plt.xlabel('$\lambda$ [$\mathrm{\AA}$]')
+plt.legend()
+plt.grid()
+plt.savefig('Figures/kappa_total_comparison.pdf')
