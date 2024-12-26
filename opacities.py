@@ -259,26 +259,26 @@ for ii in range(len(tauR_1)):
         tau_0_5_index = ii
     elif abs(tauR_1[ii]-5)<0.1:
         tau_5_index = ii
-        
+
 T_1_tau_0_5 = T_1[tau_0_5_index]
 Pe_1_tau_0_5 = Pe_1[tau_0_5_index]
-Ne = Ne_ideal_gases(Pe_1_tau_0_5, T_1_tau_0_5)
+Ne_1_tau_0_5 = Ne_ideal_gases(Pe_1_tau_0_5, T_1_tau_0_5)
 n_vector = populations_finder(Pe_1_tau_0_5, T_1_tau_0_5)
 n_HI = n_vector[1]
 n_levels = n_levels_finder(n_HI, T_1_tau_0_5)
 
 df_model_1 = pd.DataFrame(columns=['tauR', 'n(H-)', 'n(HI)', 'n(HII)', 'Ne', 'n(HI, n=1)', 'n(HI, n=2)', 'n(HI, n=3)'])
-new_row = [0.5, n_vector[0], n_vector[1], n_vector[2], Ne, n_levels[0], n_levels[1], n_levels[2]]
+new_row = [0.5, n_vector[0], n_vector[1], n_vector[2], Ne_1_tau_0_5, n_levels[0], n_levels[1], n_levels[2]]
 df_model_1.loc[len(df_model_1)] = new_row
 
 T_1_tau_5 = T_1[tau_5_index]
 Pe_1_tau_5 = Pe_1[tau_5_index]
-Ne = Ne_ideal_gases(Pe_1_tau_5, T_1_tau_5)
+Ne_1_tau_5 = Ne_ideal_gases(Pe_1_tau_5, T_1_tau_5)
 n_vector = populations_finder(Pe_1_tau_5, T_1_tau_5)
 n_HI = n_vector[1]
 n_levels = n_levels_finder(n_HI, T_1_tau_5)
 
-new_row = [5, n_vector[0], n_vector[1], n_vector[2], Ne, n_levels[0], n_levels[1], n_levels[2]]
+new_row = [5, n_vector[0], n_vector[1], n_vector[2], Ne_1_tau_5, n_levels[0], n_levels[1], n_levels[2]]
 df_model_1.loc[len(df_model_1)] = new_row
 
 print('1) Estrella con Teff = 5000 K')
@@ -299,23 +299,23 @@ for ii in range(len(tauR_2)):
         
 T_2_tau_0_5 = T_2[tau_0_5_index]
 Pe_2_tau_0_5 = Pe_2[tau_0_5_index]
-Ne = Ne_ideal_gases(Pe_2_tau_0_5, T_2_tau_0_5)
+Ne_2_tau_0_5 = Ne_ideal_gases(Pe_2_tau_0_5, T_2_tau_0_5)
 n_vector = populations_finder(Pe_2_tau_0_5, T_2_tau_0_5)
 n_HI = n_vector[1]
 n_levels = n_levels_finder(n_HI, T_2_tau_0_5)
 
 df_model_2 = pd.DataFrame(columns=['tauR', 'n(H-)', 'n(HI)', 'n(HII)', 'Ne', 'n(HI, n=1)', 'n(HI, n=2)', 'n(HI, n=3)'])
-new_row = [0.5, n_vector[0], n_vector[1], n_vector[2], Ne, n_levels[0], n_levels[1], n_levels[2]]
+new_row = [0.5, n_vector[0], n_vector[1], n_vector[2], Ne_2_tau_0_5, n_levels[0], n_levels[1], n_levels[2]]
 df_model_2.loc[len(df_model_2)] = new_row
 
 T_2_tau_5 = T_2[tau_5_index]
 Pe_2_tau_5 = Pe_2[tau_5_index]
-Ne = Ne_ideal_gases(Pe_2_tau_5, T_2_tau_5)
+Ne_2_tau_5 = Ne_ideal_gases(Pe_2_tau_5, T_2_tau_5)
 n_vector = populations_finder(Pe_2_tau_5, T_2_tau_5)
 n_HI = n_vector[1]
 n_levels = n_levels_finder(n_HI, T_2_tau_5)
 
-new_row = [5, n_vector[0], n_vector[1], n_vector[2], Ne, n_levels[0], n_levels[1], n_levels[2]]
+new_row = [5, n_vector[0], n_vector[1], n_vector[2], Ne_2_tau_5, n_levels[0], n_levels[1], n_levels[2]]
 df_model_2.loc[len(df_model_2)] = new_row
 
 print('\n2) Estrella con Teff = 8000 K')
@@ -348,10 +348,10 @@ k_B = 1.380622e-16   # Boltzmann constant
 def g_ff(ldo, T):
     return 1 + ( 0.3456 / ( (ldo*R)**(1/3) ) ) * ( ldo*k_B*T / (h*c)  + 1/2 )
 
-def sigma_ff_HI(Z, f, T):
+def sigma_ff_HI(Z, ldo, T):
     prefactor = 2/(3**(3/2)) * h**2 * e**2 * R * np.sqrt(2 * m_e / (np.pi * k_B)) / ( np.pi * m_e**3 )      # = 3.69e8
-    ldo = c / f
-    return prefactor * Z**2 / ( T**(1/2) * f**3 ) * g_ff(ldo, T)
+    freq = c / ldo
+    return prefactor * Z**2 / ( T**(1/2) * freq**3 ) * g_ff(ldo, T)
 
 def kappa_ff_HI(Z, f, T, Ne, n_HII):
     sigma = sigma_ff_HI(Z, f, T)
@@ -362,10 +362,10 @@ def kappa_ff_HI(Z, f, T, Ne, n_HII):
 def g_bf(ldo, n):
     return 1 - ( 0.3456 / ( (ldo*R)**(1/3) ) ) * ( ldo * R / (n**2) - 1/2 )
 
-def sigma_bf_HI(Z, n, f):
+def sigma_bf_HI(Z, n, ldo):
     prefactor = 32/(3**(3/2)) * np.pi**2*e**6*R/(h)**3     # = 2.813e29
-    ldo = c / f
-    return prefactor*Z**4 / (n**5 * f**3) * g_bf(ldo, n)
+    freq = c / ldo
+    return prefactor*Z**4 / (n**5 * freq**3) * g_bf(ldo, n)
 
 def kappa_bf_HI(Z, f, T, ni):
     sigma = sigma_bf_HI(Z, f, T)
@@ -475,13 +475,21 @@ for ii in range(len(tauR_1)):
 for ii in range(len(tauR_2)):
     if abs(tauR_2[ii]-1)<0.1:
         tau_1_index = ii
+        
+T_1_tau_1 = T_1[tau_1_index]
+Pe_1_tau_1 = Pe_1[tau_1_index]
+Ne_1_tau_1 = Ne_ideal_gases(Pe_1_tau_1, T_1_tau_1)
+n_vector = populations_finder(Pe_1_tau_1, T_1_tau_1)
+n_HI = n_vector[1]
+n_levels = n_levels_finder(n_HI, T_1_tau_1)
 
 
-lambda_array = np.arange(500, 20000, 0.5)            # En Angstrom
+lambda_array_A = np.arange(500, 20000, 0.5)            # En Angstrom
+lambda_array_cm = lambda_array_A * 1e-8
 
 plt.figure(figsize=(10, 8))
-opacidad_ff_HI = sigma_ff_HI()
-plt.plot(lambda_array, kappa_ff_HI)
+opacidad_ff_HI_1 = sigma_ff_HI()
+plt.plot(lambda_array_A, kappa_ff_HI)
 
 
 
