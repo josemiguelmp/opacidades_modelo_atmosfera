@@ -253,6 +253,7 @@ def n_levels_finder(n_HI, T):
 
 tauR_1 = 10**logtauR_1
 
+# Buscamos el índice para el cual tau = 0.5, 5
 for ii in range(len(tauR_1)):
     if abs(tauR_1[ii]-0.5)<0.1:
         tau_0_5_index = ii
@@ -289,6 +290,7 @@ print(df_model_1)
 
 tauR_2 = 10**logtauR_2
 
+# Buscamos el índice para el cual tau = 0.5, 5
 for ii in range(len(tauR_2)):
     if abs(tauR_2[ii]-0.5)<0.1:
         tau_0_5_index = ii
@@ -306,8 +308,8 @@ df_model_2 = pd.DataFrame(columns=['tauR', 'n(H-)', 'n(HI)', 'n(HII)', 'Ne', 'n(
 new_row = [0.5, n_vector[0], n_vector[1], n_vector[2], Ne, n_levels[0], n_levels[1], n_levels[2]]
 df_model_2.loc[len(df_model_2)] = new_row
 
-T_2_tau_5 = T_1[tau_5_index]
-Pe_2_tau_5 = Pe_1[tau_5_index]
+T_2_tau_5 = T_2[tau_5_index]
+Pe_2_tau_5 = Pe_2[tau_5_index]
 Ne = Ne_ideal_gases(Pe_2_tau_5, T_2_tau_5)
 n_vector = populations_finder(Pe_2_tau_5, T_2_tau_5)
 n_HI = n_vector[1]
