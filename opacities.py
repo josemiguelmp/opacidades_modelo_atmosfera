@@ -386,6 +386,12 @@ def sigma_bf_HI(Z, n, f):
     return prefactor*Z**4 / (n**5 * f**3) * g_bf(ldo, n)
 
 
+
+# Opacidad free-free del HI
 def sigma_ff_HI(Z, f, T):
     prefactor = 2/(3**(3/2)) * h**2 * e**2 * R * np.sqrt(2 * m_e / (np.pi * k_B)) / ( np.pi * m_e**3 )      # = 3.69e8
     return prefactor * Z**2 / ( T**(1/2) * f**3 )
+
+def kappa_ff_HI(Z, f, T, Ne, n_HII):
+    sigma = sigma_ff_HI(Z, f, T)
+    return sigma * Ne * n_HII * ( 1 - np.exp( -h * f / (k_B * T) ) )
