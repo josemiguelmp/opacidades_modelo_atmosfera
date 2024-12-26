@@ -363,12 +363,33 @@ def g_bf(ldo, n):
     return 1 - ( 0.3456 / ( (ldo*R)**(1/3) ) ) * ( ldo * R / (n**2) - 1/2 )
 
 def sigma_bf_HI(Z, n, ldo):
-    prefactor = 32/(3**(3/2)) * np.pi**2*e**6*R/(h)**3     # = 2.813e29
-    freq = c / ldo
-    return prefactor*Z**4 / (n**5 * freq**3) * g_bf(ldo, n)
+    """
+    Args:
+        Z (float): charge of the nucleus of the atom or ion
+        n (int): quantum number n
+        ldo(np.array): Array with the considered wavelengths in cm
 
-def kappa_bf_HI(Z, f, T, ni):
-    sigma = sigma_bf_HI(Z, f, T)
+    Returns:
+        np.array: cross sections in cm^2
+    """       
+    prefactor = 32/(3**(3/2)) * np.pi**2 * e**6 * R / (h)**3     # = 2.813e29
+    freq = c / ldo
+    ldo_max = n**2 / R
+    freq_max = c / ldo_max
+    
+    sigma_list = []
+    for jj in range(len(freq)):
+        if freq[jj] >= freq_max:
+            sigma = prefactor * Z**4 / (n**5 * freq[jj]**3) * g_bf(ldo[jj], n)
+            sigma_list.append( sigma )
+        elif freq[jj] < freq_max:
+            sigma_list.append(0)
+    
+    return np.array(sigma_list)
+
+def kappa_bf_HI(Z, n, ldo, T, ni):
+    f = c / ldo
+    sigma = sigma_bf_HI(Z, n, ldo)
     return sigma * ni * ( 1 - np.exp( -h * f / (k_B * T) ) )
 
 
@@ -440,6 +461,8 @@ def sigma_bf_Hneg(ldo):
     Returns:
         float: cross section en cm^2
     """
+    ldo_A = ldo * 1e8      # Pasamos a Angstrom para usar las constantes
+    
     a0 = 1.99654
     a1 = -1.18267e-5
     a2 = 2.64243e-6
@@ -448,7 +471,7 @@ def sigma_bf_Hneg(ldo):
     a5 = -1.39568e-18
     a6 = 2.78701e-23
     
-    sigma = (a0 + a1*ldo + a2*ldo**2 + a3*ldo**3 + a4*ldo**4 + a5*ldo**5 + a6*ldo**6) * 1e18
+    sigma = (a0 + a1*ldo_A + a2*ldo_A**2 + a3*ldo_A**3 + a4*ldo_A**4 + a5*ldo_A**5 + a6*ldo_A**6) * 1e-18
     return sigma
 
 def kappa_bf_Hneg(Pe, T):
@@ -535,5 +558,45 @@ plt.grid()
 plt.savefig('Figures/sigma_ff_Hneg.pdf')
 
 
+# %%
+
+Pe_1_tau_1 = Pe_1[tau_1_index]
+Ne_1_tau_1 = Ne_ideal_gases(Pe_1_tau_1, T_1_tau_1)
+n_vector_1 = populations_finder(Pe_1_tau_1, T_1_tau_1)
+n_HI = n_vector_1[1]
+n_levels_1 = n_levels_finder(n_HI, T_1_tau_1)
+n1_1, n2_1, n3_1 = n_levels_1
+
+Pe_2_tau_1 = Pe_2[tau_2_index]
+Ne_2_tau_1 = Ne_ideal_gases(Pe_2_tau_1, T_2_tau_1)
+n_vector_2 = populations_finder(Pe_2_tau_1, T_2_tau_1)
+n_HI = n_vector_2[1]
+n_levels_2 = n_levels_finder(n_HI, T_2_tau_1)
+n1_2, n2_2, n3_2 = n_levels_2
+
+# Sigma para las transiciones b-f desde los 3 niveles de HI
+sigma_bf_HI_n1 = sigma_bf_HI(Z=1, n=1, ldo = lambda_array_cm)
+sigma_bf_HI_n2 = sigma_bf_HI(Z=1, n=2, ldo = lambda_array_cm)
+sigma_bf_HI_n3 = sigma_bf_HI(Z=1, n=3, ldo = lambda_array_cm)
+
+sigma_bf_Hneg_ar = sigma_bf_Hneg(ldo=lambda_array_cm)
 
 
+
+plt.figure(figsize=(10, 8))
+plt.title('$\sigma_{bf}$')
+
+plt.plot(lambda_array_A, sigma_bf_HI_n1, label='HI, n=1')      # Válido para los dos modelos
+plt.plot(lambda_array_A, sigma_bf_HI_n2, label='HI, n=2')
+plt.plot(lambda_array_A, sigma_bf_HI_n3, label='HI, n=3')
+plt.plot(lambda_array_A, sigma_bf_Hneg_ar, label='H$^-$')
+
+
+plt.yscale('log')
+plt.xscale('log')
+plt.ylabel('$\sigma_{bf}$ [cm$^2$]')
+plt.xlabel('$\lambda$ [$\mathrm{\AA}$]')
+plt.ylim(1e-18, 1e-15)
+plt.legend()
+plt.grid()
+#plt.savefig('Figures/sigma_ff_Hneg.pdf')
