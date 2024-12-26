@@ -410,6 +410,14 @@ def lambda_Rydberg(l, u):
 
 # Opacidad free-free del H-
 def sigma_ff_Hneg(ldo, T):
+    """
+    Args:
+        ldo (float or np.array): wavelength in Angstrom
+        T (float): Temperature in K
+
+    Returns:
+        float or np.array: cross section in cm^2
+    """
     f0 = -2.2763 - 1.6850 * np.log10(ldo) + 0.76661 * (np.log10(ldo))**2 - 0.053346 * (np.log10(ldo))**3
     f1 = 15.2827 - 9.2846 * np.log10(ldo) + 1.99381 * (np.log10(ldo))**2 - 0.142631 * (np.log10(ldo))**3
     f2 = -197.789 + 190.266 * np.log10(ldo) - 67.9775 * (np.log10(ldo))**2 + 10.6913 * (np.log10(ldo))**3 - 0.625151 * (np.log10(ldo))**4
@@ -418,8 +426,8 @@ def sigma_ff_Hneg(ldo, T):
     sigma = 1e-26 * 10**( f0 + f1 * np.log10(theta) + f2 * (np.log10(theta))**2 )
     return sigma
 
-def kappa_ff_Hneg(Pe, n_HI):
-    sigma = sigma_ff_Hneg
+def kappa_ff_Hneg(ldo, T, Pe, n_HI):
+    sigma = sigma_ff_Hneg(ldo, T)
     return sigma * Pe * n_HI
 
 
@@ -506,7 +514,26 @@ plt.ylabel('$\sigma_{ff}$ [cm$^2$]')
 plt.xlabel('$\lambda$ [$\mathrm{\AA}$]')
 plt.legend()
 plt.grid()
-plt.show()
+plt.savefig('Figures/sigma_ff_HI.pdf')
+
+
+sigma_ff_Hneg_1 = sigma_ff_Hneg(ldo=lambda_array_A, T=T_1_tau_1)
+sigma_ff_Hneg_2 = sigma_ff_Hneg(ldo=lambda_array_A, T=T_2_tau_1)
+
+plt.figure(figsize=(10, 8))
+plt.title('$\sigma_{ff}$ (H$^-$)')
+
+plt.plot(lambda_array_A, sigma_ff_Hneg_1, label='$T_{eff}$ = 5000 K')
+plt.plot(lambda_array_A, sigma_ff_Hneg_2, label='$T_{eff}$ = 8000 K')
+
+plt.yscale('log')
+plt.xscale('log')
+plt.ylabel('$\sigma_{ff}$ [cm$^2$]')
+plt.xlabel('$\lambda$ [$\mathrm{\AA}$]')
+plt.legend()
+plt.grid()
+plt.savefig('Figures/sigma_ff_Hneg.pdf')
+
 
 
 
