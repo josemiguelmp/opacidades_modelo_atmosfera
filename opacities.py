@@ -433,15 +433,16 @@ def lambda_Rydberg(l, u):
 def sigma_ff_Hneg(ldo, T):
     """
     Args:
-        ldo (float or np.array): wavelength in Angstrom
+        ldo (float or np.array): wavelength in cm
         T (float): Temperature in K
 
     Returns:
         float or np.array: cross section in cm^2
     """
-    f0 = -2.2763 - 1.6850 * np.log10(ldo) + 0.76661 * (np.log10(ldo))**2 - 0.053346 * (np.log10(ldo))**3
-    f1 = 15.2827 - 9.2846 * np.log10(ldo) + 1.99381 * (np.log10(ldo))**2 - 0.142631 * (np.log10(ldo))**3
-    f2 = -197.789 + 190.266 * np.log10(ldo) - 67.9775 * (np.log10(ldo))**2 + 10.6913 * (np.log10(ldo))**3 - 0.625151 * (np.log10(ldo))**4
+    ldo_A = ldo * 1e8
+    f0 = -2.2763 - 1.6850 * np.log10(ldo_A) + 0.76661 * (np.log10(ldo_A))**2 - 0.053346 * (np.log10(ldo_A))**3
+    f1 = 15.2827 - 9.2846 * np.log10(ldo_A) + 1.99381 * (np.log10(ldo_A))**2 - 0.142631 * (np.log10(ldo_A))**3
+    f2 = -197.789 + 190.266 * np.log10(ldo_A) - 67.9775 * (np.log10(ldo_A))**2 + 10.6913 * (np.log10(ldo_A))**3 - 0.625151 * (np.log10(ldo_A))**4
     
     theta = 5040/T
     sigma = 1e-26 * 10**( f0 + f1 * np.log10(theta) + f2 * (np.log10(theta))**2 )
@@ -540,8 +541,8 @@ plt.grid()
 plt.savefig('Figures/sigma_ff_HI.pdf')
 
 
-sigma_ff_Hneg_1 = sigma_ff_Hneg(ldo=lambda_array_A, T=T_1_tau_1)
-sigma_ff_Hneg_2 = sigma_ff_Hneg(ldo=lambda_array_A, T=T_2_tau_1)
+sigma_ff_Hneg_1 = sigma_ff_Hneg(ldo=lambda_array_cm, T=T_1_tau_1)
+sigma_ff_Hneg_2 = sigma_ff_Hneg(ldo=lambda_array_cm, T=T_2_tau_1)
 
 plt.figure(figsize=(10, 8))
 plt.title('$\sigma_{ff}$ (H$^-$)')
