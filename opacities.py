@@ -476,8 +476,8 @@ def sigma_bf_Hneg(ldo):
     sigma = (a0 + a1*ldo_A + a2*ldo_A**2 + a3*ldo_A**3 + a4*ldo_A**4 + a5*ldo_A**5 + a6*ldo_A**6) * 1e-18
     return sigma
 
-def kappa_bf_Hneg(Pe, T):
-    sigma = sigma_bf_Hneg
+def kappa_bf_Hneg(ldo, T, Pe):
+    sigma = sigma_bf_Hneg(ldo)
     theta = 5040 / T
     kappa = 4.158e-10 * sigma * Pe * theta**(5/2) * 10**(0.754*theta)
     return kappa
@@ -606,14 +606,68 @@ n_levels_2 = n_levels_finder(n_HI, T_2_tau_1)
 n1_2, n2_2, n3_2 = n_levels_2
 
 
-kappa_ff_HI_1 = kappa_ff_HI(Z=1, ldo=lambda_array_cm, T=T_1_tau_1, Ne=Ne_1_tau_1, n_HII=n_vector_1[2])
+# Estrella con Teff = 5000 K
+
+kappa_ff_HI_1    = kappa_ff_HI(Z=1, ldo=lambda_array_cm, T=T_1_tau_1, Ne=Ne_1_tau_1, n_HII=n_vector_1[2])
+kappa_bf_HI_n1_1 = kappa_bf_HI(Z=1, n=1, ldo=lambda_array_cm, T=T_1_tau_1, ni=n1_1)
+kappa_bf_HI_n2_1 = kappa_bf_HI(Z=1, n=2, ldo=lambda_array_cm, T=T_1_tau_1, ni=n2_1)
+kappa_bf_HI_n3_1 = kappa_bf_HI(Z=1, n=3, ldo=lambda_array_cm, T=T_1_tau_1, ni=n3_1)
+kappa_ff_Hneg_1  = kappa_ff_Hneg(ldo=lambda_array_cm, T=T_1_tau_1, Pe=Pe_1_tau_1, n_HI=n_vector_1[1])
+kappa_bf_Hneg_1  = kappa_bf_Hneg(ldo=lambda_array_cm, T=T_1_tau_1, Pe=Pe_1_tau_1)
+kappa_e_1        = kappa_e(Ne_1_tau_1) * np.ones(len(lambda_array_cm))
+
+kappa_total_1 = kappa_ff_HI_1 + kappa_bf_HI_n1_1 + kappa_bf_HI_n2_1 + kappa_bf_HI_n3_1 + kappa_ff_Hneg_1 + kappa_bf_Hneg_1 + kappa_e_1 
 
 
 plt.figure(figsize=(10, 8))
 plt.title('Star with $T_{eff}$ = 5000 K')
-plt.plot(lambda_array_A, kappa_ff_HI_1)
+
+plt.plot(lambda_array_A, kappa_ff_HI_1, label='f-f HI')
+plt.plot(lambda_array_A, kappa_bf_HI_n1_1, label='b-f HI, n = 1')
+plt.plot(lambda_array_A, kappa_bf_HI_n2_1, label='b-f HI, n = 2')
+plt.plot(lambda_array_A, kappa_bf_HI_n3_1, label='b-f HI, n = 3')
+plt.plot(lambda_array_A, kappa_ff_Hneg_1, label='f-f H$^-$')
+plt.plot(lambda_array_A, kappa_bf_Hneg_1, label='b-f H$^-$')
+plt.plot(lambda_array_A, kappa_e_1, label='e$^-$ scattering')
+plt.plot(lambda_array_A, kappa_total_1, label='Total opacity')
 
 plt.yscale('log')
 plt.xscale('log')
 plt.ylabel('$\kappa$ [cm$^{-1}$]')
 plt.xlabel('$\lambda$ [$\mathrm{\AA}$]')
+plt.legend()
+plt.grid()
+plt.savefig('Figures/kappa_1.pdf')
+
+
+# Estrella con Teff = 8000 K 
+
+kappa_ff_HI_2    = kappa_ff_HI(Z=1, ldo=lambda_array_cm, T=T_2_tau_1, Ne=Ne_2_tau_1, n_HII=n_vector_2[2])
+kappa_bf_HI_n1_2 = kappa_bf_HI(Z=1, n=1, ldo=lambda_array_cm, T=T_2_tau_1, ni=n1_2)
+kappa_bf_HI_n2_2 = kappa_bf_HI(Z=1, n=2, ldo=lambda_array_cm, T=T_2_tau_1, ni=n2_2)
+kappa_bf_HI_n3_2 = kappa_bf_HI(Z=1, n=3, ldo=lambda_array_cm, T=T_2_tau_1, ni=n3_2)
+kappa_ff_Hneg_2  = kappa_ff_Hneg(ldo=lambda_array_cm, T=T_2_tau_1, Pe=Pe_2_tau_1, n_HI=n_vector_2[1])
+kappa_bf_Hneg_2  = kappa_bf_Hneg(ldo=lambda_array_cm, T=T_2_tau_1, Pe=Pe_2_tau_1)
+kappa_e_2        = kappa_e(Ne_2_tau_1) * np.ones(len(lambda_array_cm))
+
+kappa_total_2 = kappa_ff_HI_2 + kappa_bf_HI_n1_2 + kappa_bf_HI_n2_2 + kappa_bf_HI_n3_2 + kappa_ff_Hneg_2 + kappa_bf_Hneg_2 + kappa_e_2
+
+plt.figure(figsize=(10, 8))
+plt.title('Star with $T_{eff}$ = 8000 K')
+
+plt.plot(lambda_array_A, kappa_ff_HI_2, label='f-f HI')
+plt.plot(lambda_array_A, kappa_bf_HI_n1_2, label='b-f HI, n = 1')
+plt.plot(lambda_array_A, kappa_bf_HI_n2_2, label='b-f HI, n = 2')
+plt.plot(lambda_array_A, kappa_bf_HI_n3_2, label='b-f HI, n = 3')
+plt.plot(lambda_array_A, kappa_ff_Hneg_2, label='f-f H$^-$')
+plt.plot(lambda_array_A, kappa_bf_Hneg_2, label='b-f H$^-$')
+plt.plot(lambda_array_A, kappa_e_2, label='e$^-$ scattering')
+plt.plot(lambda_array_A, kappa_total_2, label='Total opacity')
+
+plt.yscale('log')
+plt.xscale('log')
+plt.ylabel('$\kappa$ [cm$^{-1}$]')
+plt.xlabel('$\lambda$ [$\mathrm{\AA}$]')
+plt.legend()
+plt.grid()
+plt.savefig('Figures/kappa_2.pdf')
