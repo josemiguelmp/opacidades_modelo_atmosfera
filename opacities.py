@@ -151,8 +151,8 @@ eV_to_erg = 1.602176634e-12
 
 # Constantes en eV
 kB_eV = 8.617e-5
-chi_HI = 13.6
-chi_Hneg = 0.75
+chi_HI = 13.6             # extraído del Gray
+chi_Hneg = 0.755          # extraído del Gray
 
 # Funciones de partición 
 g_HI = 2
@@ -327,7 +327,7 @@ print(df_model_2)
 # %%
 
 # =============================================================================
-# Cross sections
+# Opacidades
 # =============================================================================
 
 # Constants in cgs
@@ -338,8 +338,65 @@ c = 2.997924562e10   # Speed of light
 m_e = 9.109558e-28   # Electron mass
 k_B = 1.380622e-16   # Boltzmann constant
 
-sigma_e = 6.648e-25
 
+def lambda_Rydberg(n, m):
+    ldo =  1 / ( R * ( 1/(n**2) - 1/(m**2) ) )
+    return ldo
+
+
+
+# =============================================================================
+# Opacidades del HI
+# =============================================================================
+
+# Opacidad free-free del HI
+def g_ff(ldo, T):
+    return 1 + ( 0.3456 / ( (ldo*R)**(1/3) ) ) * ( ldo*k_B*T / (h*c)  + 1/2 )
+
+def sigma_ff_HI(Z, f, T):
+    prefactor = 2/(3**(3/2)) * h**2 * e**2 * R * np.sqrt(2 * m_e / (np.pi * k_B)) / ( np.pi * m_e**3 )      # = 3.69e8
+    ldo = c / f
+    return prefactor * Z**2 / ( T**(1/2) * f**3 ) * g_ff(ldo, T)
+
+def kappa_ff_HI(Z, f, T, Ne, n_HII):
+    sigma = sigma_ff_HI(Z, f, T)
+    return sigma * Ne * n_HII * ( 1 - np.exp( -h * f / (k_B * T) ) )
+
+
+# Opacidad bound-free del HI
+def g_bf(ldo, n):
+    return 1 - ( 0.3456 / ( (ldo*R)**(1/3) ) ) * ( ldo * R / (n**2) - 1/2 )
+
+def sigma_bf_HI(Z, n, f):
+    prefactor = 32/(3**(3/2)) * np.pi**2*e**6*R/(h)**3     # = 2.813e29
+    ldo = c / f
+    return prefactor*Z**4 / (n**5 * f**3) * g_bf(ldo, n)
+
+def kappa_bf_HI(Z, f, T, ni):
+    sigma = sigma_bf_HI(Z, f, T)
+    return sigma * ni * ( 1 - np.exp( -h * f / (k_B * T) ) )
+
+
+# =============================================================================
+# Opacidades del H-
+# =============================================================================
+
+# Opacidad free-free del H-
+def sigma_ff_Hneg(ldo, T):
+    f0 = -2.2763 - 1.6850 * np.log10(ldo) + 0.76661 * (np.log10(ldo))**2 - 0.053346 * (np.log10(ldo))**3
+    f1 = 15.2827 - 9.2846 * np.log10(ldo) + 1.99381 * (np.log10(ldo))**2 - 0.142631 * (np.log10(ldo))**3
+    f2 = -197.789 + 190.266 * np.log10(ldo) - 67.9775 * (np.log10(ldo))**2 + 10.6913 * (np.log10(ldo))**3 - 0.625151 * (np.log10(ldo))**4
+    
+    theta = 5040/T
+    sigma = 1e-26 * 10**( f0 + f1 * np.log10(theta) + f2 * (np.log10(theta))**2 )
+    return sigma
+
+def kappa_ff(Pe, n_Hneg):
+    sigma = sigma_ff_Hneg
+    return sigma * Pe * n_Hneg
+
+
+# Opacidad bound-free del H-
 def sigma_bf_Hneg(ldo):
     """
     Args:
@@ -359,39 +416,18 @@ def sigma_bf_Hneg(ldo):
     sigma = (a0 + a1*ldo + a2*ldo**2 + a3*ldo**3 + a4*ldo**4 + a5*ldo**5 + a6*ldo**6) * 1e18
     return sigma
 
-
-def sigma_ff_Hneg(ldo, T):
-    f0 = -2.2763 - 1.6850 * np.log10(ldo) + 0.76661 * (np.log10(ldo))**2 - 0.053346 * (np.log10(ldo))**3
-    f1 = 15.2827 - 9.2846 * np.log10(ldo) + 1.99381 * (np.log10(ldo))**2 - 0.142631 * (np.log10(ldo))**3
-    f2 = -197.789 + 190.266 * np.log10(ldo) - 67.9775 * (np.log10(ldo))**2 + 10.6913 * (np.log10(ldo))**3 - 0.625151 * (np.log10(ldo))**4
-    
-    theta = 5040/T
-    sigma = 1e-26 * 10**( f0 + f1 * np.log10(theta) + f2 * (np.log10(theta))**2 )
-    return sigma
-
-def lambda_Rydberg(n, m):
-    ldo =  1 / ( R * ( 1/(n**2) - 1/(m**2) ) )
-    return ldo
-
-def g_bf(ldo, n):
-    return 1 - ( 0.3456 / ( (ldo*R)**(1/3) ) ) * ( ldo * R / (n**2) - 1/2 )
-
-def g_ff(ldo, T):
-    return 1 + ( 0.3456 / ( (ldo*R)**(1/3) ) ) * ( ldo*k_B*T / (h*c)  + 1/2 )
+def kappa_bf_Hneg(Pe, T):
+    sigma = sigma_bf_Hneg
+    theta = 5040 / T
+    kappa = 4.158e-10 * sigma * Pe * theta**(5/2) * 10**(0.754*theta)
+    return kappa
 
 
-def sigma_bf_HI(Z, n, f):
-    prefactor = 32/(3**(3/2)) * np.pi**2*e**6*R/(h)**3     # = 2.813e29
-    ldo = c / f
-    return prefactor*Z**4 / (n**5 * f**3) * g_bf(ldo, n)
+# =============================================================================
+# Opacidad electrones
+# =============================================================================
 
+sigma_e = 6.648e-25         # Gray
 
-
-# Opacidad free-free del HI
-def sigma_ff_HI(Z, f, T):
-    prefactor = 2/(3**(3/2)) * h**2 * e**2 * R * np.sqrt(2 * m_e / (np.pi * k_B)) / ( np.pi * m_e**3 )      # = 3.69e8
-    return prefactor * Z**2 / ( T**(1/2) * f**3 )
-
-def kappa_ff_HI(Z, f, T, Ne, n_HII):
-    sigma = sigma_ff_HI(Z, f, T)
-    return sigma * Ne * n_HII * ( 1 - np.exp( -h * f / (k_B * T) ) )
+def kappa_e(Ne):
+    return Ne * sigma_e
