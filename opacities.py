@@ -353,8 +353,9 @@ def sigma_ff_HI(Z, ldo, T):
     freq = c / ldo
     return prefactor * Z**2 / ( T**(1/2) * freq**3 ) * g_ff(ldo, T)
 
-def kappa_ff_HI(Z, f, T, Ne, n_HII):
-    sigma = sigma_ff_HI(Z, f, T)
+def kappa_ff_HI(Z, ldo, T, Ne, n_HII):
+    f = c / ldo
+    sigma = sigma_ff_HI(Z, ldo, T)
     return sigma * Ne * n_HII * ( 1 - np.exp( -h * f / (k_B * T) ) )
 
 
@@ -496,7 +497,7 @@ def kappa_e(Ne):
 # %%
 
 # =============================================================================
-# Gráficas
+# Gráficas de cross sections
 # =============================================================================
 
 # Buscamos el índice para el cual tau = 1, en ambos modelos
@@ -510,14 +511,6 @@ for ii in range(len(tauR_2)):
         
 T_1_tau_1 = T_1[tau_1_index]
 T_2_tau_1 = T_2[tau_2_index]
-
-"""
-Pe_1_tau_1 = Pe_1[tau_1_index]
-Ne_1_tau_1 = Ne_ideal_gases(Pe_1_tau_1, T_1_tau_1)
-n_vector = populations_finder(Pe_1_tau_1, T_1_tau_1)
-n_HI = n_vector[1]
-n_levels = n_levels_finder(n_HI, T_1_tau_1)
-"""
 
 
 lambda_array_A = np.arange(500, 20000, 0.5)            # En Angstrom
@@ -561,20 +554,6 @@ plt.savefig('Figures/sigma_ff_Hneg.pdf')
 
 # %%
 
-Pe_1_tau_1 = Pe_1[tau_1_index]
-Ne_1_tau_1 = Ne_ideal_gases(Pe_1_tau_1, T_1_tau_1)
-n_vector_1 = populations_finder(Pe_1_tau_1, T_1_tau_1)
-n_HI = n_vector_1[1]
-n_levels_1 = n_levels_finder(n_HI, T_1_tau_1)
-n1_1, n2_1, n3_1 = n_levels_1
-
-Pe_2_tau_1 = Pe_2[tau_2_index]
-Ne_2_tau_1 = Ne_ideal_gases(Pe_2_tau_1, T_2_tau_1)
-n_vector_2 = populations_finder(Pe_2_tau_1, T_2_tau_1)
-n_HI = n_vector_2[1]
-n_levels_2 = n_levels_finder(n_HI, T_2_tau_1)
-n1_2, n2_2, n3_2 = n_levels_2
-
 # Sigma para las transiciones b-f desde los 3 niveles de HI
 sigma_bf_HI_n1 = sigma_bf_HI(Z=1, n=1, ldo = lambda_array_cm)
 sigma_bf_HI_n2 = sigma_bf_HI(Z=1, n=2, ldo = lambda_array_cm)
@@ -601,3 +580,40 @@ plt.ylim(1e-18, 1e-15)
 plt.legend()
 plt.grid()
 plt.savefig('Figures/sigma_bf.pdf')
+
+
+# %%
+
+# =============================================================================
+# Gráficas de opacidades
+# =============================================================================
+
+
+T_1_tau_1 = T_1[tau_1_index]
+Pe_1_tau_1 = Pe_1[tau_1_index]
+Ne_1_tau_1 = Ne_ideal_gases(Pe_1_tau_1, T_1_tau_1)
+n_vector_1 = populations_finder(Pe_1_tau_1, T_1_tau_1)
+n_HI = n_vector_1[1]
+n_levels_1 = n_levels_finder(n_HI, T_1_tau_1)
+n1_1, n2_1, n3_1 = n_levels_1
+
+T_2_tau_1 = T_2[tau_2_index]
+Pe_2_tau_1 = Pe_2[tau_2_index]
+Ne_2_tau_1 = Ne_ideal_gases(Pe_2_tau_1, T_2_tau_1)
+n_vector_2 = populations_finder(Pe_2_tau_1, T_2_tau_1)
+n_HI = n_vector_2[1]
+n_levels_2 = n_levels_finder(n_HI, T_2_tau_1)
+n1_2, n2_2, n3_2 = n_levels_2
+
+
+kappa_ff_HI_1 = kappa_ff_HI(Z=1, ldo=lambda_array_cm, T=T_1_tau_1, Ne=Ne_1_tau_1, n_HII=n_vector_1[2])
+
+
+plt.figure(figsize=(10, 8))
+plt.title('Star with $T_{eff}$ = 5000 K')
+plt.plot(lambda_array_A, kappa_ff_HI_1)
+
+plt.yscale('log')
+plt.xscale('log')
+plt.ylabel('$\kappa$ [cm$^{-1}$]')
+plt.xlabel('$\lambda$ [$\mathrm{\AA}$]')
