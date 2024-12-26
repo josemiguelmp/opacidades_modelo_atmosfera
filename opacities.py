@@ -339,11 +339,6 @@ m_e = 9.109558e-28   # Electron mass
 k_B = 1.380622e-16   # Boltzmann constant
 
 
-def lambda_Rydberg(n, m):
-    ldo =  1 / ( R * ( 1/(n**2) - 1/(m**2) ) )
-    return ldo
-
-
 
 # =============================================================================
 # Opacidades del HI
@@ -394,15 +389,20 @@ def g_bb_HI(u, serie):
     elif serie == 'Lymann beta':
         g_bb = 0.765
     
-    return g_bb
-        
+    return g_bb     
     
-def sigma_bb_HI(freq, l, u):
+def sigma_bb_HI(l, u, serie):
     prefactor = np.pi * e**2 / (m_e * c)
-    f = 2**5 / (3**(3/2) * np.pi) * l**(-5) * u**(-3) * ( 1/l**2 - 1/u**2 )**(-3)
-    g_bb = g_bb_HI(u, )
+    g_bb = g_bb_HI(u, serie)
+    f = 2**5 / (3**(3/2) * np.pi) * l**(-5) * u**(-3) * ( 1/l**2 - 1/u**2 )**(-3) * g_bb
     
-    
+    return prefactor * f
+
+def lambda_Rydberg(l, u):
+    ldo =  1 / ( R * ( 1/(l**2) - 1/(u**2) ) )
+    return ldo
+
+
 
 # =============================================================================
 # Opacidades del H-
@@ -418,7 +418,7 @@ def sigma_ff_Hneg(ldo, T):
     sigma = 1e-26 * 10**( f0 + f1 * np.log10(theta) + f2 * (np.log10(theta))**2 )
     return sigma
 
-def kappa_ff(Pe, n_HI):
+def kappa_ff_Hneg(Pe, n_HI):
     sigma = sigma_ff_Hneg
     return sigma * Pe * n_HI
 
@@ -458,3 +458,30 @@ sigma_e = 6.648e-25         # Gray
 
 def kappa_e(Ne):
     return Ne * sigma_e
+
+
+
+# %%
+
+# =============================================================================
+# Gráficas
+# =============================================================================
+
+# Buscamos el índice para el cual tau = 1, en ambos modelos
+for ii in range(len(tauR_1)):
+    if abs(tauR_1[ii]-1)<0.1:
+        tau_1_index = ii
+
+for ii in range(len(tauR_2)):
+    if abs(tauR_2[ii]-1)<0.1:
+        tau_1_index = ii
+
+
+lambda_array = np.arange(500, 20000, 0.5)            # En Angstrom
+
+plt.figure(figsize=(10, 8))
+opacidad_ff_HI = sigma_ff_HI()
+plt.plot(lambda_array, kappa_ff_HI)
+
+
+
