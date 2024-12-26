@@ -377,6 +377,33 @@ def kappa_bf_HI(Z, f, T, ni):
     return sigma * ni * ( 1 - np.exp( -h * f / (k_B * T) ) )
 
 
+# Opacidad bound-bound del HI
+def g_bb_HI(u, serie):
+    """
+    Args:
+        u (float): n of upper level in the transition
+        serie (str): transition. It can takes the value Balmer, Lymann alpha or Lymann beta
+
+    Returns:
+        float: Gaunt factor for bound-bound transitions in HI
+    """
+    if serie == 'Balmer':
+        g_bb = 0.869 - 3 / (u**3)
+    elif serie == 'Lymann alpha':
+        g_bb = 0.717
+    elif serie == 'Lymann beta':
+        g_bb = 0.765
+    
+    return g_bb
+        
+    
+def sigma_bb_HI(freq, l, u):
+    prefactor = np.pi * e**2 / (m_e * c)
+    f = 2**5 / (3**(3/2) * np.pi) * l**(-5) * u**(-3) * ( 1/l**2 - 1/u**2 )**(-3)
+    g_bb = g_bb_HI(u, )
+    
+    
+
 # =============================================================================
 # Opacidades del H-
 # =============================================================================
@@ -391,9 +418,9 @@ def sigma_ff_Hneg(ldo, T):
     sigma = 1e-26 * 10**( f0 + f1 * np.log10(theta) + f2 * (np.log10(theta))**2 )
     return sigma
 
-def kappa_ff(Pe, n_Hneg):
+def kappa_ff(Pe, n_HI):
     sigma = sigma_ff_Hneg
-    return sigma * Pe * n_Hneg
+    return sigma * Pe * n_HI
 
 
 # Opacidad bound-free del H-
