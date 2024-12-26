@@ -318,3 +318,72 @@ df_model_2.loc[len(df_model_2)] = new_row
 
 print('\n2) Estrella con Teff = 8000 K')
 print(df_model_2)
+
+
+
+
+# %%
+
+# =============================================================================
+# Cross sections
+# =============================================================================
+
+# Constants in cgs
+R = 1.0968e5         # Rydberg constant
+e = 4.803e-10        # esu
+h = 6.626196e-27     # Planck constant
+c = 2.997924562e10   # Speed of light
+m_e = 9.109558e-28   # Electron mass
+k_B = 1.380622e-16   # Boltzmann constant
+
+sigma_e = 6.648e-25
+
+def sigma_bf_Hneg(ldo):
+    """
+    Args:
+        ldo (float): Longitud de onda en A
+
+    Returns:
+        float: cross section en cm^2
+    """
+    a0 = 1.99654
+    a1 = -1.18267e-5
+    a2 = 2.64243e-6
+    a3 = -4.40524e-10
+    a4 = 3.23992e-14
+    a5 = -1.39568e-18
+    a6 = 2.78701e-23
+    
+    sigma = (a0 + a1*ldo + a2*ldo**2 + a3*ldo**3 + a4*ldo**4 + a5*ldo**5 + a6*ldo**6) * 1e18
+    return sigma
+
+
+def sigma_ff_Hneg(ldo, T):
+    f0 = -2.2763 - 1.6850 * np.log10(ldo) + 0.76661 * (np.log10(ldo))**2 - 0.053346 * (np.log10(ldo))**3
+    f1 = 15.2827 - 9.2846 * np.log10(ldo) + 1.99381 * (np.log10(ldo))**2 - 0.142631 * (np.log10(ldo))**3
+    f2 = -197.789 + 190.266 * np.log10(ldo) - 67.9775 * (np.log10(ldo))**2 + 10.6913 * (np.log10(ldo))**3 - 0.625151 * (np.log10(ldo))**4
+    
+    theta = 5040/T
+    sigma = 1e-26 * 10**( f0 + f1 * np.log10(theta) + f2 * (np.log10(theta))**2 )
+    return sigma
+
+def lambda_Rydberg(n, m):
+    ldo =  1 / ( R * ( 1/(n**2) - 1/(m**2) ) )
+    return ldo
+
+def g_bf(ldo, n):
+    return 1 - ( 0.3456 / ( (ldo*R)**(1/3) ) ) * ( ldo * R / (n**2) - 1/2 )
+
+def g_ff(ldo, T):
+    return 1 + ( 0.3456 / ( (ldo*R)**(1/3) ) ) * ( ldo*k_B*T / (h*c)  + 1/2 )
+
+
+def sigma_bf_HI(Z, n, f):
+    prefactor = 32/(3**(3/2)) * np.pi**2*e**6*R/(h)**3     # = 2.813e29
+    ldo = c / f
+    return prefactor*Z**4 / (n**5 * f**3) * g_bf(ldo, n)
+
+
+def sigma_ff_HI(Z, f, T):
+    prefactor = 2/(3**(3/2)) * h**2 * e**2 * R * np.sqrt(2 * m_e / (np.pi * k_B)) / ( np.pi * m_e**3 )      # = 3.69e8
+    return prefactor * Z**2 / ( T**(1/2) * f**3 )
