@@ -474,22 +474,39 @@ for ii in range(len(tauR_1)):
 
 for ii in range(len(tauR_2)):
     if abs(tauR_2[ii]-1)<0.1:
-        tau_1_index = ii
+        tau_2_index = ii
         
 T_1_tau_1 = T_1[tau_1_index]
+T_2_tau_1 = T_2[tau_2_index]
+
+"""
 Pe_1_tau_1 = Pe_1[tau_1_index]
 Ne_1_tau_1 = Ne_ideal_gases(Pe_1_tau_1, T_1_tau_1)
 n_vector = populations_finder(Pe_1_tau_1, T_1_tau_1)
 n_HI = n_vector[1]
 n_levels = n_levels_finder(n_HI, T_1_tau_1)
+"""
 
 
 lambda_array_A = np.arange(500, 20000, 0.5)            # En Angstrom
 lambda_array_cm = lambda_array_A * 1e-8
 
+sigma_ff_HI_1 = sigma_ff_HI(Z=1, ldo=lambda_array_cm, T=T_1_tau_1)
+sigma_ff_HI_2 = sigma_ff_HI(Z=1, ldo=lambda_array_cm, T=T_2_tau_1)
+
 plt.figure(figsize=(10, 8))
-opacidad_ff_HI_1 = sigma_ff_HI()
-plt.plot(lambda_array_A, kappa_ff_HI)
+plt.title('$\sigma_{ff}$ (HI)')
+
+plt.plot(lambda_array_A, sigma_ff_HI_1, label='$T_{eff}$ = 5000 K')
+plt.plot(lambda_array_A, sigma_ff_HI_2, label='$T_{eff}$ = 8000 K')
+
+plt.yscale('log')
+plt.xscale('log')
+plt.ylabel('$\sigma_{ff}$ [cm$^2$]')
+plt.xlabel('$\lambda$ [$\mathrm{\AA}$]')
+plt.legend()
+plt.grid()
+plt.show()
 
 
 
