@@ -332,7 +332,7 @@ print(df_model_2)
 # %%
 
 # =============================================================================
-# Opacidades
+# Funciones para las opacidades
 # =============================================================================
 
 # Constants in cgs
@@ -351,14 +351,42 @@ k_B = 1.380622e-16   # Boltzmann constant
 
 # Opacidad free-free del HI
 def g_ff(ldo, T):
+    """
+    Args:
+        ldo(np.array): Array with the considered wavelengths, in cm
+        T (float): Temperature, in K
+        
+    Returns:
+        np.array: Gaunt factor, adimensional
+    """ 
     return 1 + ( 0.3456 / ( (ldo*R)**(1/3) ) ) * ( ldo*k_B*T / (h*c)  + 1/2 )
 
 def sigma_ff_HI(Z, ldo, T):
+    """
+    Args:
+        Z (float): charge of the nucleus of the atom or ion
+        ldo(np.array): Array with the considered wavelengths in cm
+        T (float): Temperature, in K   
+
+    Returns:
+        np.array: Arrays with f-f cross sections of HI, in cm^2
+    """  
     prefactor = 2/(3**(3/2)) * h**2 * e**2 * R * np.sqrt(2 * m_e / (np.pi * k_B)) / ( np.pi * m_e**3 )      # = 3.69e8
     freq = c / ldo
     return prefactor * Z**2 / ( T**(1/2) * freq**3 ) * g_ff(ldo, T)
 
 def kappa_ff_HI(Z, ldo, T, Ne, n_HII):
+    """
+    Args:
+        Z (float): charge of the nucleus of the atom or ion
+        ldo(np.array): Array with the considered wavelengths in cm
+        T (float): Temperature, in K
+        Ne (float): Number density of electrons, in cm^-3
+        n_HII (float): Number density of ionized Hydrogen, in cm^-3
+
+    Returns:
+        np.array: Array with f-f opacities of HI, in cm^-1
+    """
     f = c / ldo
     sigma = sigma_ff_HI(Z, ldo, T)
     return sigma * Ne * n_HII * ( 1 - np.exp( -h * f / (k_B * T) ) )
@@ -366,6 +394,14 @@ def kappa_ff_HI(Z, ldo, T, Ne, n_HII):
 
 # Opacidad bound-free del HI
 def g_bf(ldo, n):
+    """
+    Args:
+        ldo(np.array): Array with the considered wavelengths, in cm
+        n (int): quantum number n
+        
+    Returns:
+        np.array: Gaunt factor, adimensional
+    """   
     return 1 - ( 0.3456 / ( (ldo*R)**(1/3) ) ) * ( ldo * R / (n**2) - 1/2 )
 
 def sigma_bf_HI(Z, n, ldo):
@@ -394,6 +430,17 @@ def sigma_bf_HI(Z, n, ldo):
     return np.array(sigma_list)
 
 def kappa_bf_HI(Z, n, ldo, T, ni):
+    """
+    Args:
+        Z (float): charge of the nucleus of the atom or ion
+        n (int): quantum number n
+        ldo(np.array): Array with the considered wavelengths in cm
+        T (float): Temperature, in K
+        ni (float): Number density of neutral Hydrogen in energy level n, in cm^-3
+
+    Returns:
+        np.array: Array with b-f opacities of HI, in cm^-1
+    """
     f = c / ldo
     sigma = sigma_bf_HI(Z, n, ldo)
     return sigma * ni * ( 1 - np.exp( -h * f / (k_B * T) ) )
@@ -419,6 +466,14 @@ def g_bb_HI(u, serie):
     return g_bb     
     
 def sigma_bb_HI(l, u):
+    """
+    Args:
+        l (int): quantum number n of the lower energy level of the atomic transition
+        u (int): quantum number n of the upper energy level of the atomic transition
+
+    Returns:
+        float: b-b cross section of HI, in cm^2
+    """  
     if l==1 and u==2:
         serie = 'Lymann alpha'
     elif l==1 and u==3:
@@ -434,10 +489,21 @@ def sigma_bb_HI(l, u):
     return prefactor * f
 
 def kappa_bb_HI(l, u, n_l, n_u):
+    """
+    Args:
+        l (int): quantum number n of the lower energy level of the atomic transition
+        u (int): quantum number n of the upper energy level of the atomic transition
+        n_l (int): population of the lower energy level of the atomic transition, in cm^-3
+        n_u (int): population of the upper energy level of the atomic transition, in cm^-3
+
+    Returns:
+        float: b-b opacity for HI, in cm^2
+    """ 
     sigma = sigma_bb_HI(l, u)
-    #freq = c / ldo
     return sigma * (n_l - n_u)
-    #return sigma * ( 1 - np.exp( (-h * freq)/(k_B * T) ) )
+    
+#freq = c / ldo 
+#return sigma * ( 1 - np.exp( (-h * freq)/(k_B * T) ) )
 
 #kbb[i][j] = sigbb[j]*n_boltz[j][i][0]*(1-np.exp((-h*nu_bb[j])/(kb_cgs*T)))
 
@@ -455,11 +521,11 @@ def lambda_Rydberg(l, u):
 def sigma_ff_Hneg(ldo, T):
     """
     Args:
-        ldo (float or np.array): wavelength in cm
-        T (float): Temperature in K
+        ldo (float or np.array): wavelengths, in cm
+        T (float): Temperature, in K
 
     Returns:
-        float or np.array: cross section in cm^2
+        float or np.array: f-f cross section of H anion, in cm^2
     """
     ldo_A = ldo * 1e8
     f0 = -2.2763 - 1.6850 * np.log10(ldo_A) + 0.76661 * (np.log10(ldo_A))**2 - 0.053346 * (np.log10(ldo_A))**3
@@ -479,10 +545,10 @@ def kappa_ff_Hneg(ldo, T, Pe, n_HI):
 def sigma_bf_Hneg(ldo, n_Hneg):
     """
     Args:
-        ldo (np.array): Longitud de onda en cm
+        ldo (np.array): wavelengths, in cm
 
     Returns:
-        np.array: cross section en cm^2
+        np.array: cross section, in cm^2
     """
     ldo_A = ldo * 1e8      # Pasamos a Angstrom para usar las constantes
     
