@@ -409,21 +409,37 @@ def g_bb_HI(u, serie):
     Returns:
         float: Gaunt factor for bound-bound transitions in HI
     """
-    if serie == 'Balmer':
-        g_bb = 0.869 - 3 / (u**3)
-    elif serie == 'Lymann alpha':
+    if serie == 'Lymann alpha':
         g_bb = 0.717
     elif serie == 'Lymann beta':
         g_bb = 0.765
+    elif serie == 'Balmer':
+        g_bb = 0.869 - 3 / (u**3)
     
     return g_bb     
     
-def sigma_bb_HI(l, u, serie):
+def sigma_bb_HI(l, u):
+    if l==1 and u==2:
+        serie = 'Lymann alpha'
+    elif l==1 and u==3:
+        serie = 'Lymann beta'
+    elif l==2 and u==3:
+        serie = 'Balmer'
+    
     prefactor = np.pi * e**2 / (m_e * c)
     g_bb = g_bb_HI(u, serie)
+    l, u = float(l), float(u)
     f = 2**5 / (3**(3/2) * np.pi) * l**(-5) * u**(-3) * ( 1/l**2 - 1/u**2 )**(-3) * g_bb
     
     return prefactor * f
+
+def kappa_bb_HI(l, u, n_l, n_u):
+    sigma = sigma_bb_HI(l, u)
+    #freq = c / ldo
+    return sigma * (n_l - n_u)
+    #return sigma * ( 1 - np.exp( (-h * freq)/(k_B * T) ) )
+
+#kbb[i][j] = sigbb[j]*n_boltz[j][i][0]*(1-np.exp((-h*nu_bb[j])/(kb_cgs*T)))
 
 def lambda_Rydberg(l, u):
     ldo =  1 / ( R * ( 1/(l**2) - 1/(u**2) ) )
@@ -460,13 +476,13 @@ def kappa_ff_Hneg(ldo, T, Pe, n_HI):
 
 
 # Opacidad bound-free del H-
-def sigma_bf_Hneg(ldo):
+def sigma_bf_Hneg(ldo, n_Hneg):
     """
     Args:
-        ldo (float): Longitud de onda en A
+        ldo (np.array): Longitud de onda en cm
 
     Returns:
-        float: cross section en cm^2
+        np.array: cross section en cm^2
     """
     ldo_A = ldo * 1e8      # Pasamos a Angstrom para usar las constantes
     
@@ -478,13 +494,23 @@ def sigma_bf_Hneg(ldo):
     a5 = -1.39568e-18
     a6 = 2.78701e-23
     
-    sigma = (a0 + a1*ldo_A + a2*ldo_A**2 + a3*ldo_A**3 + a4*ldo_A**4 + a5*ldo_A**5 + a6*ldo_A**6) * 1e-18
-    return sigma
+    sigma = (a0 + a1*ldo_A + a2*ldo_A**2 + a3*ldo_A**3 + a4*ldo_A**4 + a5*ldo_A**5 + a6*ldo_A**6) * 1e-18 / n_Hneg
+    
+    cut_index = len(sigma)
+    for jj in np.arange(len(sigma)):
+        if sigma[jj]<1e-30:
+            cut_index = jj
+            break
+    
+    physical_sigma = np.concatenate( ( sigma[0:cut_index], np.zeros((len(sigma) - cut_index)) ), 0 )
 
-def kappa_bf_Hneg(ldo, T, Pe):
-    sigma = sigma_bf_Hneg(ldo)
+    return physical_sigma
+
+def kappa_bf_Hneg(ldo, T, Pe, n_vector):
+    n_Hneg, n_HI, n_HII = n_vector
+    sigma = sigma_bf_Hneg(ldo, n_Hneg)
     theta = 5040 / T
-    kappa = 4.158e-10 * sigma * Pe * theta**(5/2) * 10**(0.754*theta)
+    kappa = 4.158e-10 * sigma * Pe * theta**(5/2) * 10**(0.754*theta) / n_HI
     return kappa
 
 
@@ -496,6 +522,8 @@ sigma_e = 6.648e-25         # Gray
 
 def kappa_e(Ne):
     return Ne * sigma_e
+
+
 
 
 
@@ -515,7 +543,20 @@ for ii in range(len(tauR_2)):
         tau_2_index = ii
         
 T_1_tau_1 = T_1[tau_1_index]
+Pe_1_tau_1 = Pe_1[tau_1_index]
+Ne_1_tau_1 = Ne_ideal_gases(Pe_1_tau_1, T_1_tau_1)
+n_vector_1 = populations_finder(Pe_1_tau_1, T_1_tau_1)
+n_HI = n_vector_1[1]
+n_levels_1 = n_levels_finder(n_HI, T_1_tau_1)
+n1_1, n2_1, n3_1 = n_levels_1
+
 T_2_tau_1 = T_2[tau_2_index]
+Pe_2_tau_1 = Pe_2[tau_2_index]
+Ne_2_tau_1 = Ne_ideal_gases(Pe_2_tau_1, T_2_tau_1)
+n_vector_2 = populations_finder(Pe_2_tau_1, T_2_tau_1)
+n_HI = n_vector_2[1]
+n_levels_2 = n_levels_finder(n_HI, T_2_tau_1)
+n1_2, n2_2, n3_2 = n_levels_2
 
 
 lambda_array_A = np.arange(500, 20000, 0.5)            # En Angstrom
@@ -557,6 +598,9 @@ plt.grid()
 plt.savefig('Figures/sigma_ff_Hneg.pdf')
 
 
+
+
+
 # %%
 
 # Sigma para las transiciones b-f desde los 3 niveles de HI
@@ -564,7 +608,7 @@ sigma_bf_HI_n1 = sigma_bf_HI(Z=1, n=1, ldo = lambda_array_cm)
 sigma_bf_HI_n2 = sigma_bf_HI(Z=1, n=2, ldo = lambda_array_cm)
 sigma_bf_HI_n3 = sigma_bf_HI(Z=1, n=3, ldo = lambda_array_cm)
 
-sigma_bf_Hneg_ar = sigma_bf_Hneg(ldo=lambda_array_cm)
+sigma_bf_Hneg_ar = sigma_bf_Hneg(ldo=lambda_array_cm, n_Hneg=n_vector_1[0])
 
 
 
@@ -581,7 +625,7 @@ plt.yscale('log')
 plt.xscale('log')
 plt.ylabel('$\sigma_{bf}$ [cm$^2$]')
 plt.xlabel('$\lambda$ [$\mathrm{\AA}$]')
-plt.ylim(1e-18, 1e-15)
+#plt.ylim(1e-18, 1e-15)
 plt.legend()
 plt.grid()
 plt.savefig('Figures/sigma_bf.pdf')
@@ -593,24 +637,6 @@ plt.savefig('Figures/sigma_bf.pdf')
 # Gráficas de opacidades
 # =============================================================================
 
-
-T_1_tau_1 = T_1[tau_1_index]
-Pe_1_tau_1 = Pe_1[tau_1_index]
-Ne_1_tau_1 = Ne_ideal_gases(Pe_1_tau_1, T_1_tau_1)
-n_vector_1 = populations_finder(Pe_1_tau_1, T_1_tau_1)
-n_HI = n_vector_1[1]
-n_levels_1 = n_levels_finder(n_HI, T_1_tau_1)
-n1_1, n2_1, n3_1 = n_levels_1
-
-T_2_tau_1 = T_2[tau_2_index]
-Pe_2_tau_1 = Pe_2[tau_2_index]
-Ne_2_tau_1 = Ne_ideal_gases(Pe_2_tau_1, T_2_tau_1)
-n_vector_2 = populations_finder(Pe_2_tau_1, T_2_tau_1)
-n_HI = n_vector_2[1]
-n_levels_2 = n_levels_finder(n_HI, T_2_tau_1)
-n1_2, n2_2, n3_2 = n_levels_2
-
-
 # Estrella con Teff = 5000 K
 
 kappa_ff_HI_1    = kappa_ff_HI(Z=1, ldo=lambda_array_cm, T=T_1_tau_1, Ne=Ne_1_tau_1, n_HII=n_vector_1[2])
@@ -618,7 +644,7 @@ kappa_bf_HI_n1_1 = kappa_bf_HI(Z=1, n=1, ldo=lambda_array_cm, T=T_1_tau_1, ni=n1
 kappa_bf_HI_n2_1 = kappa_bf_HI(Z=1, n=2, ldo=lambda_array_cm, T=T_1_tau_1, ni=n2_1)
 kappa_bf_HI_n3_1 = kappa_bf_HI(Z=1, n=3, ldo=lambda_array_cm, T=T_1_tau_1, ni=n3_1)
 kappa_ff_Hneg_1  = kappa_ff_Hneg(ldo=lambda_array_cm, T=T_1_tau_1, Pe=Pe_1_tau_1, n_HI=n_vector_1[1])
-kappa_bf_Hneg_1  = kappa_bf_Hneg(ldo=lambda_array_cm, T=T_1_tau_1, Pe=Pe_1_tau_1)
+kappa_bf_Hneg_1  = kappa_bf_Hneg(ldo=lambda_array_cm, T=T_1_tau_1, Pe=Pe_1_tau_1, n_vector=n_vector_1)
 kappa_e_1        = kappa_e(Ne_1_tau_1) * np.ones(len(lambda_array_cm))
 
 kappa_total_1 = kappa_ff_HI_1 + kappa_bf_HI_n1_1 + kappa_bf_HI_n2_1 + kappa_bf_HI_n3_1 + kappa_ff_Hneg_1 + kappa_bf_Hneg_1 + kappa_e_1 
@@ -652,7 +678,7 @@ kappa_bf_HI_n1_2 = kappa_bf_HI(Z=1, n=1, ldo=lambda_array_cm, T=T_2_tau_1, ni=n1
 kappa_bf_HI_n2_2 = kappa_bf_HI(Z=1, n=2, ldo=lambda_array_cm, T=T_2_tau_1, ni=n2_2)
 kappa_bf_HI_n3_2 = kappa_bf_HI(Z=1, n=3, ldo=lambda_array_cm, T=T_2_tau_1, ni=n3_2)
 kappa_ff_Hneg_2  = kappa_ff_Hneg(ldo=lambda_array_cm, T=T_2_tau_1, Pe=Pe_2_tau_1, n_HI=n_vector_2[1])
-kappa_bf_Hneg_2  = kappa_bf_Hneg(ldo=lambda_array_cm, T=T_2_tau_1, Pe=Pe_2_tau_1)
+kappa_bf_Hneg_2  = kappa_bf_Hneg(ldo=lambda_array_cm, T=T_2_tau_1, Pe=Pe_2_tau_1, n_vector=n_vector_2)
 kappa_e_2        = kappa_e(Ne_2_tau_1) * np.ones(len(lambda_array_cm))
 
 kappa_total_2 = kappa_ff_HI_2 + kappa_bf_HI_n1_2 + kappa_bf_HI_n2_2 + kappa_bf_HI_n3_2 + kappa_ff_Hneg_2 + kappa_bf_Hneg_2 + kappa_e_2
@@ -692,3 +718,104 @@ plt.xlabel('$\lambda$ [$\mathrm{\AA}$]')
 plt.legend()
 plt.grid()
 plt.savefig('Figures/kappa_total_comparison.pdf')
+
+
+
+
+# %%
+
+# =============================================================================
+# Tabla de opacidades
+# =============================================================================
+
+def longitud_corte(n):
+    return (n**2 / R) * 1e8
+
+n = np.array([1, 2, 3])
+cortes_cantos = longitud_corte(n)
+print(cortes_cantos)
+
+
+
+lambdas_tabla = []
+for ldo in cortes_cantos:
+    delta_ldo = 10                      # Angstrom
+    lambdas_tabla.append(ldo - delta_ldo)
+    lambdas_tabla.append(ldo + delta_ldo)
+
+lambdas_tabla_A = np.array(lambdas_tabla)
+lambdas_tabla_cm = lambdas_tabla_A * 1e-8
+
+
+# Estrella con Teff = 5000 K
+
+kappa_ff_HI_1    = kappa_ff_HI(Z=1, ldo=lambdas_tabla_cm, T=T_1_tau_1, Ne=Ne_1_tau_1, n_HII=n_vector_1[2])
+kappa_bf_HI_n1_1 = kappa_bf_HI(Z=1, n=1, ldo=lambdas_tabla_cm, T=T_1_tau_1, ni=n1_1)
+kappa_bf_HI_n2_1 = kappa_bf_HI(Z=1, n=2, ldo=lambdas_tabla_cm, T=T_1_tau_1, ni=n2_1)
+kappa_bf_HI_n3_1 = kappa_bf_HI(Z=1, n=3, ldo=lambdas_tabla_cm, T=T_1_tau_1, ni=n3_1)
+kappa_ff_Hneg_1  = kappa_ff_Hneg(ldo=lambdas_tabla_cm, T=T_1_tau_1, Pe=Pe_1_tau_1, n_HI=n_vector_1[1])
+kappa_bf_Hneg_1  = kappa_bf_Hneg(ldo=lambdas_tabla_cm, T=T_1_tau_1, Pe=Pe_1_tau_1, n_vector=n_vector_1)
+kappa_e_1        = kappa_e(Ne_1_tau_1) * np.ones(len(lambdas_tabla_cm))
+
+data_1 = [kappa_ff_HI_1, kappa_bf_HI_n1_1, kappa_bf_HI_n2_1, kappa_bf_HI_n3_1, kappa_ff_Hneg_1, kappa_bf_Hneg_1, kappa_e_1]
+row_names = ["kappa_ff_HI", "kappa_bf_HI_n1", "kappa_bf_HI_n2", "kappa_bf_HI_n3", "kappa_ff_Hneg", "kappa_bf_Hneg", "kappa_e"]
+
+df_tabla_final_1 = pd.DataFrame(data_1, columns=lambdas_tabla_A)
+df_tabla_final_1.index = row_names
+print('\n1) Estrella con Teff = 5000 K')
+print(df_tabla_final_1)
+
+
+#%%
+# Estrella con Teff = 5000 K
+kappa_ff_HI_2    = kappa_ff_HI(Z=1, ldo=lambdas_tabla_cm, T=T_2_tau_1, Ne=Ne_2_tau_1, n_HII=n_vector_2[2])
+kappa_bf_HI_n1_2 = kappa_bf_HI(Z=1, n=1, ldo=lambdas_tabla_cm, T=T_2_tau_1, ni=n1_2)
+kappa_bf_HI_n2_2 = kappa_bf_HI(Z=1, n=2, ldo=lambdas_tabla_cm, T=T_2_tau_1, ni=n2_2)
+kappa_bf_HI_n3_2 = kappa_bf_HI(Z=1, n=3, ldo=lambdas_tabla_cm, T=T_2_tau_1, ni=n3_2)
+kappa_ff_Hneg_2  = kappa_ff_Hneg(ldo=lambdas_tabla_cm, T=T_2_tau_1, Pe=Pe_2_tau_1, n_HI=n_vector_2[1])
+kappa_bf_Hneg_2  = kappa_bf_Hneg(ldo=lambdas_tabla_cm, T=T_2_tau_1, Pe=Pe_2_tau_1, n_vector=n_vector_2)
+kappa_e_2        = kappa_e(Ne_2_tau_1) * np.ones(len(lambdas_tabla_cm))
+
+data_2 = [kappa_ff_HI_1, kappa_bf_HI_n1_2, kappa_bf_HI_n2_2, kappa_bf_HI_n3_2, kappa_ff_Hneg_2, kappa_bf_Hneg_2, kappa_e_2]
+df_tabla_final_2 = pd.DataFrame(data_2, columns=lambdas_tabla_A)
+df_tabla_final_2.index = row_names
+print('\n2) Estrella con Teff = 8000 K')
+print(df_tabla_final_2)
+
+
+# %%
+
+niveles_series = [np.array([1, 3]), np.array([1, 2]), np.array([2, 3])]
+poblaciones_series_1 = [np.array([n1_1, n3_1]), np.array([n1_1, n2_1]), np.array([n2_1, n3_1])]
+poblaciones_series_2 = [np.array([n1_2, n3_2]), np.array([n1_2, n2_2]), np.array([n2_2, n3_2])]
+
+
+# Estrella con Teff = 5000 K
+
+print('\n1) Estrella con Teff = 5000 K')
+
+
+poblaciones_series = poblaciones_series_1
+for niveles, poblaciones in zip(niveles_series, poblaciones_series):
+    l, u      =  niveles[0], niveles[1]
+    n_l, n_u  =  poblaciones[0], poblaciones[1]
+    ldo_salto_cm = lambda_Rydberg(l, u)
+    ldo_salto_A  = ldo_salto_cm * 1e8
+    kappa = kappa_bb_HI(l, u, n_l, n_u)
+    print(f"n = {l} -> n = {u}:")
+    print(f"ldo = {ldo_salto_A:.2f} A, kappa = {kappa:e}")
+    
+
+# Estrella con Teff = 8000 K
+
+print('\n2) Estrella con Teff = 8000 K')
+
+poblaciones_series = poblaciones_series_2
+for niveles, poblaciones in zip(niveles_series, poblaciones_series):
+    l, u      =  niveles[0], niveles[1]
+    n_l, n_u  =  poblaciones[0], poblaciones[1]
+    ldo_salto_cm = lambda_Rydberg(l, u)
+    ldo_salto_A  = ldo_salto_cm * 1e8
+    kappa = kappa_bb_HI(l, u, n_l, n_u)
+    print(f"n = {l} -> n = {u}:")
+    print(f"ldo = {ldo_salto_A:.2f} A, kappa = {kappa:e}")
