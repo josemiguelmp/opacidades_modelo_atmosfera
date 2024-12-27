@@ -508,6 +508,14 @@ def kappa_bb_HI(l, u, n_l, n_u):
 #kbb[i][j] = sigbb[j]*n_boltz[j][i][0]*(1-np.exp((-h*nu_bb[j])/(kb_cgs*T)))
 
 def lambda_Rydberg(l, u):
+    """
+    Args:
+        l (int): quantum number n of the lower energy level of the atomic transition
+        u (int): quantum number n of the upper energy level of the atomic transition
+
+    Returns:
+        float: light wavelength for transition u -> l, in cm
+    """  
     ldo =  1 / ( R * ( 1/(l**2) - 1/(u**2) ) )
     return ldo
 
@@ -537,6 +545,16 @@ def sigma_ff_Hneg(ldo, T):
     return sigma
 
 def kappa_ff_Hneg(ldo, T, Pe, n_HI):
+    """
+    Args:
+        ldo(np.array): Array with the considered wavelengths, in cm
+        T (float): Temperature, in K
+        Pe (float): Electronic pressure, in dyn/cm^2
+        n_HI (float): Number density of neutral Hydrogen, in cm^-3
+
+    Returns:
+        np.array: Array with f-f opacities of H-, in cm^-1
+    """
     sigma = sigma_ff_Hneg(ldo, T)
     return sigma * Pe * n_HI
 
@@ -573,6 +591,16 @@ def sigma_bf_Hneg(ldo, n_Hneg):
     return physical_sigma
 
 def kappa_bf_Hneg(ldo, T, Pe, n_vector):
+    """
+    Args:
+        ldo(np.array): Array with the considered wavelengths, in cm
+        T (float): Temperature, in K
+        Pe (float): Electronic pressure, in dyn/cm^2
+        n_vector (np.array): Array with number densities of H-, HI and HII (in this order), in cm^-3
+
+    Returns:
+        np.array: Array with b-f opacities of H-, in cm^-1
+    """
     n_Hneg, n_HI, n_HII = n_vector
     sigma = sigma_bf_Hneg(ldo, n_Hneg)
     theta = 5040 / T
@@ -587,6 +615,13 @@ def kappa_bf_Hneg(ldo, T, Pe, n_vector):
 sigma_e = 6.648e-25         # Gray
 
 def kappa_e(Ne):
+    """
+    Args:
+        Ne (float): Number density of electrons, in cm^-3
+
+    Returns:
+        float: opacity of electronic scattering, in cm^2
+    """
     return Ne * sigma_e
 
 
@@ -854,6 +889,8 @@ print(df_tabla_final_2)
 # =============================================================================
 # Tabla de opacidades b-b del HI
 # =============================================================================
+
+print('OPACIDADES b-b DEL HI')
 
 niveles_series = [np.array([1, 3]), np.array([1, 2]), np.array([2, 3])]
 poblaciones_series_1 = [np.array([n1_1, n3_1]), np.array([n1_1, n2_1]), np.array([n2_1, n3_1])]
