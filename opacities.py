@@ -785,6 +785,10 @@ print(df_tabla_final_2)
 
 # %%
 
+# =============================================================================
+# Tabla de opacidades b-b del HI
+# =============================================================================
+
 niveles_series = [np.array([1, 3]), np.array([1, 2]), np.array([2, 3])]
 poblaciones_series_1 = [np.array([n1_1, n3_1]), np.array([n1_1, n2_1]), np.array([n2_1, n3_1])]
 poblaciones_series_2 = [np.array([n1_2, n3_2]), np.array([n1_2, n2_2]), np.array([n2_2, n3_2])]
