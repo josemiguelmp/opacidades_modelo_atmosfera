@@ -387,9 +387,9 @@ def kappa_ff_HI(Z, ldo, T, Ne, n_HII):
     Returns:
         np.array: Array with f-f opacities of HI, in cm^-1
     """
-    f = c / ldo
+    freq = c / ldo
     sigma = sigma_ff_HI(Z, ldo, T)
-    return sigma * Ne * n_HII * ( 1 - np.exp( -h * f / (k_B * T) ) )
+    return sigma * Ne * n_HII * ( 1 - np.exp( -h * freq / (k_B * T) ) )
 
 
 # Opacidad bound-free del HI
@@ -502,11 +502,6 @@ def kappa_bb_HI(l, u, n_l, n_u):
     sigma = sigma_bb_HI(l, u)
     return sigma * (n_l - n_u)
     
-#freq = c / ldo 
-#return sigma * ( 1 - np.exp( (-h * freq)/(k_B * T) ) )
-
-#kbb[i][j] = sigbb[j]*n_boltz[j][i][0]*(1-np.exp((-h*nu_bb[j])/(kb_cgs*T)))
-
 def lambda_Rydberg(l, u):
     """
     Args:
@@ -560,7 +555,7 @@ def kappa_ff_Hneg(ldo, T, Pe, n_HI):
 
 
 # Opacidad bound-free del H-
-def sigma_bf_Hneg(ldo, n_Hneg):
+def sigma_bf_Hneg(ldo):
     """
     Args:
         ldo (np.array): wavelengths, in cm
@@ -578,7 +573,7 @@ def sigma_bf_Hneg(ldo, n_Hneg):
     a5 = -1.39568e-18
     a6 = 2.78701e-23
     
-    sigma = (a0 + a1*ldo_A + a2*ldo_A**2 + a3*ldo_A**3 + a4*ldo_A**4 + a5*ldo_A**5 + a6*ldo_A**6) * 1e-18 / n_Hneg
+    sigma = (a0 + a1*ldo_A + a2*ldo_A**2 + a3*ldo_A**3 + a4*ldo_A**4 + a5*ldo_A**5 + a6*ldo_A**6) * 1e-18
     
     cut_index = len(sigma)
     for jj in np.arange(len(sigma)):
@@ -601,10 +596,10 @@ def kappa_bf_Hneg(ldo, T, Pe, n_vector):
     Returns:
         np.array: Array with b-f opacities of H-, in cm^-1
     """
-    n_Hneg, n_HI, n_HII = n_vector
-    sigma = sigma_bf_Hneg(ldo, n_Hneg)
+    n_HI = n_vector[1]
+    sigma = sigma_bf_Hneg(ldo)
     theta = 5040 / T
-    kappa = 4.158e-10 * sigma * Pe * theta**(5/2) * 10**(0.754*theta) / n_HI
+    kappa = 4.158e-10 * sigma * Pe * theta**(5/2) * 10**(0.754*theta) * n_HI
     return kappa
 
 
@@ -637,22 +632,22 @@ def kappa_e(Ne):
 # Buscamos el índice para el cual tau = 1, en ambos modelos
 for ii in range(len(tauR_1)):
     if abs(tauR_1[ii]-1)<0.1:
-        tau_1_index = ii
+        tau_1_index_1 = ii
 
 for ii in range(len(tauR_2)):
     if abs(tauR_2[ii]-1)<0.1:
-        tau_2_index = ii
+        tau_2_index_2 = ii
         
-T_1_tau_1 = T_1[tau_1_index]
-Pe_1_tau_1 = Pe_1[tau_1_index]
+T_1_tau_1 = T_1[tau_1_index_1]
+Pe_1_tau_1 = Pe_1[tau_1_index_1]
 Ne_1_tau_1 = Ne_ideal_gases(Pe_1_tau_1, T_1_tau_1)
 n_vector_1 = populations_finder(Pe_1_tau_1, T_1_tau_1)
 n_HI = n_vector_1[1]
 n_levels_1 = n_levels_finder(n_HI, T_1_tau_1)
 n1_1, n2_1, n3_1 = n_levels_1
 
-T_2_tau_1 = T_2[tau_2_index]
-Pe_2_tau_1 = Pe_2[tau_2_index]
+T_2_tau_1 = T_2[tau_2_index_2]
+Pe_2_tau_1 = Pe_2[tau_2_index_2]
 Ne_2_tau_1 = Ne_ideal_gases(Pe_2_tau_1, T_2_tau_1)
 n_vector_2 = populations_finder(Pe_2_tau_1, T_2_tau_1)
 n_HI = n_vector_2[1]
@@ -677,7 +672,7 @@ plt.xscale('log')
 plt.ylabel('$\sigma_{ff}$ [cm$^2$]')
 plt.xlabel('$\lambda$ [$\mathrm{\AA}$]')
 plt.legend()
-plt.grid()
+plt.grid(which='both', alpha=0.4)
 plt.savefig('Figures/sigma_ff_HI.pdf')
 
 
@@ -695,7 +690,7 @@ plt.xscale('log')
 plt.ylabel('$\sigma_{ff}$ [cm$^2$]')
 plt.xlabel('$\lambda$ [$\mathrm{\AA}$]')
 plt.legend()
-plt.grid()
+plt.grid(which='both', alpha=0.4)
 plt.savefig('Figures/sigma_ff_Hneg.pdf')
 
 
@@ -709,7 +704,7 @@ sigma_bf_HI_n1 = sigma_bf_HI(Z=1, n=1, ldo = lambda_array_cm)
 sigma_bf_HI_n2 = sigma_bf_HI(Z=1, n=2, ldo = lambda_array_cm)
 sigma_bf_HI_n3 = sigma_bf_HI(Z=1, n=3, ldo = lambda_array_cm)
 
-sigma_bf_Hneg_ar = sigma_bf_Hneg(ldo=lambda_array_cm, n_Hneg=n_vector_1[0])
+sigma_bf_Hneg_ar = sigma_bf_Hneg(ldo=lambda_array_cm)
 
 
 
@@ -726,9 +721,8 @@ plt.yscale('log')
 plt.xscale('log')
 plt.ylabel('$\sigma_{bf}$ [cm$^2$]')
 plt.xlabel('$\lambda$ [$\mathrm{\AA}$]')
-#plt.ylim(1e-18, 1e-15)
 plt.legend()
-plt.grid()
+plt.grid(which='both', alpha=0.4)
 plt.savefig('Figures/sigma_bf.pdf')
 
 
@@ -768,7 +762,7 @@ plt.xscale('log')
 plt.ylabel('$\kappa$ [cm$^{-1}$]')
 plt.xlabel('$\lambda$ [$\mathrm{\AA}$]')
 plt.legend()
-plt.grid()
+plt.grid(which='both', alpha=0.4)
 plt.savefig('Figures/kappa_1.pdf')
 
 
@@ -801,7 +795,7 @@ plt.xscale('log')
 plt.ylabel('$\kappa$ [cm$^{-1}$]')
 plt.xlabel('$\lambda$ [$\mathrm{\AA}$]')
 plt.legend()
-plt.grid()
+plt.grid(which='both', alpha=0.4)
 plt.savefig('Figures/kappa_2.pdf')
 
 
@@ -817,7 +811,7 @@ plt.xscale('log')
 plt.ylabel('$\kappa$ [cm$^{-1}$]')
 plt.xlabel('$\lambda$ [$\mathrm{\AA}$]')
 plt.legend()
-plt.grid()
+plt.grid(which='both', alpha=0.4)
 plt.savefig('Figures/kappa_total_comparison.pdf')
 
 
@@ -826,7 +820,7 @@ plt.savefig('Figures/kappa_total_comparison.pdf')
 # %%
 
 # =============================================================================
-# Tabla de opacidades
+# Tablas de opacidades
 # =============================================================================
 
 def longitud_corte(n):
@@ -877,7 +871,7 @@ kappa_ff_Hneg_2  = kappa_ff_Hneg(ldo=lambdas_tabla_cm, T=T_2_tau_1, Pe=Pe_2_tau_
 kappa_bf_Hneg_2  = kappa_bf_Hneg(ldo=lambdas_tabla_cm, T=T_2_tau_1, Pe=Pe_2_tau_1, n_vector=n_vector_2)
 kappa_e_2        = kappa_e(Ne_2_tau_1) * np.ones(len(lambdas_tabla_cm))
 
-data_2 = [kappa_ff_HI_1, kappa_bf_HI_n1_2, kappa_bf_HI_n2_2, kappa_bf_HI_n3_2, kappa_ff_Hneg_2, kappa_bf_Hneg_2, kappa_e_2]
+data_2 = [kappa_ff_HI_2, kappa_bf_HI_n1_2, kappa_bf_HI_n2_2, kappa_bf_HI_n3_2, kappa_ff_Hneg_2, kappa_bf_Hneg_2, kappa_e_2]
 df_tabla_final_2 = pd.DataFrame(data_2, columns=lambdas_tabla_A)
 df_tabla_final_2.index = row_names
 print('\n2) Estrella con Teff = 8000 K')
