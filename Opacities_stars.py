@@ -3,9 +3,10 @@
 """
 Creado el Miércoles 25 de diciembre de 2024
 
-@autor: mariomanzano
+@autor: José Miguel Martín y Mario Manzano
 """
 
+# %%
 
 from scipy.optimize import fsolve
 import numpy as np
@@ -14,8 +15,8 @@ import matplotlib.pylab as plt
 import os
 
 # Rutas de los archivos
-archivo_5000 = "/Users/mariomanzano/Desktop/Máster en Astrofísica ULL/01 - Primer cuatrimestre/Atmósferas Estelares/Entregables/Segundo Entregable/t5000.dat"
-archivo_8000 = "/Users/mariomanzano/Desktop/Máster en Astrofísica ULL/01 - Primer cuatrimestre/Atmósferas Estelares/Entregables/Segundo Entregable/t8000.dat"
+archivo_5000 = "t5000.dat"
+archivo_8000 = "t8000.dat"
 
 def procesar_archivo(archivo):
     with open(archivo, 'r') as file:
@@ -59,7 +60,7 @@ tamaño_fuente_leyenda = 14
 
 # Leemos el primer archivo (T = 5000 K)
 
-file_name_1 = "/Users/mariomanzano/Desktop/Máster en Astrofísica ULL/01 - Primer cuatrimestre/Atmósferas Estelares/Entregables/Segundo Entregable/t5000.dat"
+file_name_1 = "t5000.dat"
 Teff_1 = 5000
 log_g_1 = log_g_2 = 4.5
 
@@ -91,7 +92,7 @@ Prad_1         = np.array(df_model_structure_1['Prad'],   dtype=float)          
 
 # Leemos el segundo archivo (T = 5000 K)
 
-file_name_2 = "/Users/mariomanzano/Desktop/Máster en Astrofísica ULL/01 - Primer cuatrimestre/Atmósferas Estelares/Entregables/Segundo Entregable/t8000.dat"
+file_name_2 = "t8000.dat"
 Teff_2 = 8000
 
 with open(file_name_2, 'r') as file:
@@ -129,7 +130,7 @@ plt.xlabel('$r$ [cm]')
 plt.ylabel(r'$\log(\tau_R)$')
 plt.legend(fontsize=tamaño_fuente_leyenda)
 plt.grid(True)
-plt.savefig('Figuras/profundidad_logtauR.pdf')
+plt.savefig('Figures/profundidad_logtauR.pdf')
 
 # 2. log(τR) vs Temperatura
 plt.figure(figsize=(10, 8))
@@ -139,7 +140,7 @@ plt.xlabel(r'$\log(\tau_R)$')
 plt.ylabel('$T$ [K]')
 plt.legend(fontsize=tamaño_fuente_leyenda)
 plt.grid(True)
-plt.savefig('Figuras/logtauR_temperatura.pdf')
+plt.savefig('Figures/logtauR_temperatura.pdf')
 
 # 3. log(τR) vs Presión electrónica
 plt.figure(figsize=(10, 8))
@@ -149,7 +150,7 @@ plt.xlabel(r'$\log(\tau_R)$')
 plt.ylabel('$P_e$ [dyn cm$^{-2}$]')
 plt.legend(fontsize=tamaño_fuente_leyenda)
 plt.grid(True)
-plt.savefig('Figuras/logtauR_presion_electronica.pdf')
+plt.savefig('Figures/logtauR_presion_electronica.pdf')
 
 # 4. log(τR) vs $P_e / P_g$
 plt.figure(figsize=(10, 8))
@@ -159,7 +160,7 @@ plt.xlabel(r'$\log(\tau_R)$')
 plt.ylabel(r'$P_e / P_g$')
 plt.legend(fontsize=tamaño_fuente_leyenda)
 plt.grid(True)
-plt.savefig('Figuras/logtauR_presion_relativa.pdf')
+plt.savefig('Figures/logtauR_presion_relativa.pdf')
 
 # 5. log(τR) vs $P_{rad} / P_g$
 plt.figure(figsize=(10, 8))
@@ -169,7 +170,7 @@ plt.xlabel(r'$\log(\tau_R)$')
 plt.ylabel(r'$P_{rad} / P_g$')
 plt.legend(fontsize=tamaño_fuente_leyenda)
 plt.grid(True)
-plt.savefig('Figuras/logtauR_presion_radiacion.pdf')
+plt.savefig('Figures/logtauR_presion_radiacion.pdf')
 
 
 # %%
@@ -198,7 +199,7 @@ plt.ylabel('$T$ [K]')
 plt.title('$T_{\mathrm{eff}} = 5000 \, \mathrm{K}$')
 plt.legend(fontsize=tamaño_fuente_leyenda)
 plt.grid(True)
-plt.savefig('Figuras/logtauR_T_vs_Tgris_5000.pdf')
+plt.savefig('Figures/logtauR_T_vs_Tgris_5000.pdf')
 
 # Gráfica: Temperatura frente a T_{gris} para 8000 K
 plt.figure(figsize=(10, 8))
@@ -209,7 +210,7 @@ plt.ylabel('$T$ [K]')
 plt.title('$T_{\mathrm{eff}} = 8000 \, \mathrm{K}$')
 plt.legend(fontsize=tamaño_fuente_leyenda)
 plt.grid(True)
-plt.savefig('Figuras/logtauR_T_vs_Tgris_8000.pdf')
+plt.savefig('Figures/logtauR_T_vs_Tgris_8000.pdf')
 
 # %%
 
@@ -863,7 +864,7 @@ plt.grid(which='both', alpha=0.4)
 plt.tick_params(axis='both', which='major', labelsize=16)
 plt.savefig('Figures/kappa_2.pdf')
 
-f# %%
+# %%
 
 
 plt.figure(figsize=(10, 8))
@@ -925,7 +926,6 @@ print('\n1) Estrella con Teff = 5000 K')
 print(df_tabla_final_1)
 
 
-#%%
 # Estrella con Teff = 8000 K
 kappa_ff_HI_2    = kappa_ff_HI(Z=1, ldo=lambdas_tabla_cm, T=T_2_tau_1, Ne=Ne_2_tau_1, n_HII=n_vector_2[2])
 kappa_bf_HI_n1_2 = kappa_bf_HI(Z=1, n=1, ldo=lambdas_tabla_cm, T=T_2_tau_1, ni=n1_2)
